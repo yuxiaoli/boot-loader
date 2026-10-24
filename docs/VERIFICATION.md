@@ -8,6 +8,7 @@ Local verification was performed against the production `dist` output, served wi
 - `npm run verify:build`: passed. Checks route files, all eight destination links, local asset existence, base path, revision identity, absence of embeds and final home terminal placement.
 - Chrome desktop: inspected rendered layout, selected macOS by click and Win12 with ArrowDown; inspected all eight link targets. Actual macOS Boot link and WinXP source link navigated correctly.
 - Chrome at 390 × 844: inspected visual and terminal layouts; no horizontal page overflow. Verified `os l` + Tab, Enter, Up history, `boot unknown`, clear, exact computed terminal color `rgb(17, 255, 0)` on `rgb(0, 0, 0)`, and Shift+Tab moving focus to the Focus terminal button.
+- Additional 320, 768 and 1280 pixel visual viewports had no horizontal page overflow and retained all four destinations.
 - Direct access and refresh tested for visual and terminal routes under `/boot-loader/`; home loaded directly with its terminal last.
 - Actual terminal boot commands navigated to daedalOS, macOS, Win12 and WinXP. After Back from WinXP, `source macos` navigated correctly to its GitHub repository.
 - All four demo and four source addresses returned HTTP 200. No destination repository was modified.
