@@ -4,7 +4,7 @@ A pure static entry point to four browser desktops. A light visual selector and 
 
 Live: https://yuxiaoli.github.io/boot-loader/
 
-Implementation happens on `develop`. Tested releases are fast-forwarded to `main` and deployed to GitHub Pages.
+Implementation and GitHub Pages deployments use `develop`. `main` is retained separately.
 
 ## Run locally
 
@@ -38,6 +38,6 @@ Edit `src/destinations.ts` to update destinations. See [design decisions](docs/D
 
 1. Implement and run `npm run check` on `develop`.
 2. Verify the built routes, keyboard interaction and mobile layout.
-3. Confirm the remote branch heads, then fast-forward `main` to the tested commit. Never force a changed remote head.
-4. GitHub Actions validates the commit again and deploys its `dist` artifact to Pages.
-5. Verify `https://yuxiaoli.github.io/boot-loader/version.json` matches the deployed `main` SHA, then verify live routes/assets and interactions.
+3. Confirm the remote `develop` head, then push the tested commit to `develop`. Never force a changed remote head.
+4. GitHub Actions validates that exact commit and deploys its `dist` artifact to Pages. The `github-pages` environment must permit `develop`; preserve existing protection rules and report any restriction instead of bypassing it.
+5. Verify `https://yuxiaoli.github.io/boot-loader/version.json` matches the deployed `develop` SHA, then verify live routes/assets and interactions.

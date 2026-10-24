@@ -26,12 +26,12 @@ jobs:
       - run: npm ci --no-fund --no-audit
       - run: npm run check
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/develop'
         with:
           path: dist
 
   deploy:
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/develop' && github.event_name != 'pull_request'
     needs: validate
     runs-on: ubuntu-latest
     permissions:
