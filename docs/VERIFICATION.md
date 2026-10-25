@@ -2,7 +2,7 @@
 
 The refinement was checked against production `dist` files served at `/boot-loader/` with Vite preview, in Windows Chrome.
 
-- `npm run check` passes TypeScript, 15 tests across four files, production build and static-output verification.
+- `npm run check` passes TypeScript, 16 tests across four files, production build and static-output verification.
 - Tests cover all seven explicit boot IDs, the exact preserved live/source inventory, missing/unknown arguments, removal of the old list command, virtual filesystem navigation and errors, completion/history/paste handling, long editable input, URL validation and recursion prevention, bounded session variables, fresh local time and screen sandbox/mixed-content policy.
 - All three routes load at 320, 390, 768 and 1280 pixels without horizontal page overflow. Direct entry and refresh work under the repository base path. No frame exists before explicit launch; all seven systems remain available through ordinary links. The Ubuntu row has a native SVG mark on both visual routes.
 - Keyboard completion expands `boo` to `boot`; bare `boot` displays usage. Initial `ls` lists all seven systems. `cd /`, `pwd`, `cat README.txt`, `time`, `set home=https://example.com` and `load $home` were exercised in the browser. Booting Windows 11 from virtual `/` navigates the current tab; Back restores a working console. A long command retained all characters through a 320-pixel viewport resize.
@@ -37,6 +37,8 @@ WebVM returns COOP/COEP headers and requires isolation the non-isolated Pages pa
 Custom `load https://example.com` and `load $home` rendered real page content in the opaque sandbox. Switching systems replaces the previous frame, closing removes it, focus returns to the launch control, and Back closes the screen. There is no timed redirect. Slow, blocked or incompatible pages retain an explicit same-tab direct-open action. No framing policy is bypassed and no proxy is used.
 
 ## Platform and release limits
+
+The reported thick green bar at the console's right edge was reproduced in Chrome at 393 by 852 after `la` and `ls`. DOM inspection identified xterm 6's native 14px scrollbar thumb, whose default color derives from the green foreground at 20% alpha. Its normal, hover and active colors now use neutral white alpha instead. Content-box painting reduces the visible thumb to 6px while preserving the native 14px drag area; scrolling is not hidden or replaced. A regression covers all three theme states. Wheel scrolling and thumb dragging worked with repeated help output; home and standalone terminal layouts were checked through focus/blur, 393 by 400 contraction/expansion, and 320, 390/393 and 1280 pixel widths. Text remained opaque green on black, with the 50% focused block and unfocused outline cursor unchanged. These are Windows Chrome viewport checks, not physical iOS keyboard or touch testing.
 
 Mobile checks use Chrome viewport emulation on Windows, not physical iOS or Safari. The page-controlled canvas, safe-area padding, viewport tracking and input sizing are covered; the reported Safari keyboard/accessory strip still needs physical-device confirmation. Third-party apps may have independent network, storage, media or permission limitations. No claim is made that arbitrary websites can be embedded.
 

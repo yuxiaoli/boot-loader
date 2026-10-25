@@ -5,6 +5,10 @@ export const terminalTheme = {
   cursor: 'rgba(17, 255, 0, 0.5)',
   cursorAccent: '#000000',
   selectionBackground: '#11ff0040',
+  // xterm otherwise derives these from the bright green foreground.
+  scrollbarSliderBackground: '#ffffff33',
+  scrollbarSliderHoverBackground: '#ffffff66',
+  scrollbarSliderActiveBackground: '#ffffff80',
 };
 
 export function terminalContext(page: string | undefined, focused: boolean, top: number, bottom: number, height: number): boolean {

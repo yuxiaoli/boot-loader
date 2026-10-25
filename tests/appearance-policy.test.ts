@@ -2,6 +2,14 @@ import { expect, test } from 'vitest';
 import { terminalContext, terminalTheme } from '../src/terminal-appearance';
 import { screenPolicy } from '../src/screen-policy';
 
+test('native scrollbars stay neutral in every interaction state instead of inheriting green terminal text', () => {
+  expect(terminalTheme).toMatchObject({
+    scrollbarSliderBackground: '#ffffff33',
+    scrollbarSliderHoverBackground: '#ffffff66',
+    scrollbarSliderActiveBackground: '#ffffff80',
+  });
+});
+
 test('terminal context follows focus and the visual viewport without recoloring the light top section', () => {
   expect(terminalTheme.cursor).toBe('rgba(17, 255, 0, 0.5)');
   expect(terminalTheme.foreground).toBe('#11FF00');
