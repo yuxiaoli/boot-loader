@@ -1,16 +1,31 @@
 import { expect, test } from 'vitest';
 import { executeCommand, TerminalSession } from '../src/commands';
 import { CommandHistory, complete, sanitizeInput } from '../src/editor';
+import { findDestination } from '../src/destinations';
+import { renderPage } from '../src/render';
 
 test('boot requires an explicit ID and resolves all six systems independently of selection', () => {
   expect(executeCommand('boot macos').navigate).toBe('https://yuxiaoli.github.io/macos/');
-  expect(executeCommand('boot win12').navigate).toBe('https://yuxiaoli.github.io/win12/');
+  expect(executeCommand('boot win12').navigate).toBe('https://win12-online.github.io/win12/boot.html');
   expect(executeCommand('boot winxp').navigate).toBe('https://yuxiaoli.github.io/winXP/');
   expect(executeCommand('boot daedalos').navigate).toBe('https://yuxiaoli.github.io/daedalOS/');
   expect(executeCommand('boot WIN11').navigate).toBe('https://win11.vercel.app/');
   expect(executeCommand('boot webvm').navigate).toBe('https://webvm.io/');
   expect(executeCommand('boot').navigate).toBeUndefined();
   expect(executeCommand('boot').lines.join('\n')).toContain('Usage: boot <system>');
+});
+
+test('Win12 uses the actual boot page across visual links, screen selection and the virtual shell', () => {
+  const bootUrl = 'https://win12-online.github.io/win12/boot.html';
+  expect(findDestination('win12')?.live).toBe(bootUrl);
+  expect(executeCommand('cat /systems/win12').lines).toContain(bootUrl);
+  expect(executeCommand('source win12').navigate).toBe('https://github.com/yuxiaoli/win12');
+  for (const page of ['home', 'visual', 'terminal'] as const) {
+    const html = renderPage(page);
+    expect(html).toContain(`href="${bootUrl}"`);
+    expect(html).not.toContain('href="https://yuxiaoli.github.io/win12/"');
+    if (page !== 'terminal') expect(html).toContain('data-embed="win12"');
+  }
 });
 
 test('completion, history and pasted text preserve an editable safe command line', () => {

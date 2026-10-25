@@ -56,7 +56,7 @@ Arrow keys edit and recall history; Tab completes; Ctrl+C cancels; Ctrl+L clears
 
 Each visual entry offers an explicit screen launch and an ordinary same-tab Open link. Source links remain secondary. A screen session loads no iframe or target assets before a user launches it; switching or exiting removes its frame. Browser Back closes the session. The screen can be exited without entering the embedded page.
 
-Some pages refuse embedding or need capabilities available only in a direct tab. A frame load event does not establish that its app works; the interface keeps a direct-open action and bounded status messages, and never navigates automatically after a timeout. WebVM requires cross-origin isolation and is offered as a direct launch on this Pages host. The supplied Win12 URL redirects to its upstream introduction. See [compatibility and verification](docs/VERIFICATION.md).
+Some pages refuse embedding or need capabilities available only in a direct tab. A frame load event does not establish that its app works; the interface keeps a direct-open action and bounded status messages, and never navigates automatically after a timeout. WebVM requires cross-origin isolation and is offered as a direct launch on this Pages host. Win12 starts at its upstream boot page, `https://win12-online.github.io/win12/boot.html`. See [compatibility and verification](docs/VERIFICATION.md).
 
 Edit `src/destinations.ts` to update destinations. See [design decisions](docs/DESIGN.md) for architecture and accessibility details.
 

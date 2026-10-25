@@ -2,7 +2,7 @@
 
 The refinement was checked against production `dist` files served at `/boot-loader/` with Vite preview, in Windows Chrome.
 
-- `npm run check` passes TypeScript, 10 tests across four files, production build and static-output verification.
+- `npm run check` passes TypeScript, 11 tests across four files, production build and static-output verification.
 - Tests cover all six explicit boot IDs, missing/unknown arguments, removal of the old list command, virtual filesystem navigation and errors, completion/history/paste handling, long editable input, URL validation and recursion prevention, bounded session variables, fresh local time and screen sandbox/mixed-content policy.
 - All three routes load at 320, 390, 768 and 1280 pixels without horizontal page overflow. Direct entry and refresh work under the repository base path. No frame exists before explicit launch; all six systems remain available through ordinary links.
 - Keyboard completion expands `boo` to `boot`; bare `boot` displays usage. Initial `ls` lists all six systems. `cd /`, `pwd`, `cat README.txt`, `time`, `set home=https://example.com` and `load $home` were exercised in the browser. Booting Windows 11 from virtual `/` navigates the current tab; Back restores a working console. A long command retained all characters through a 320-pixel viewport resize.
@@ -19,11 +19,13 @@ All six configured demo addresses returned HTTP 200 when checked. Their source l
 | macOS | Finder, desktop menu and dock rendered | Available |
 | Windows 11 | Desktop icons and taskbar rendered | Verified in the same tab |
 | WinXP | Desktop, My Computer and Minesweeper rendered; its own browser demo has an unrelated external DNS failure | Available |
-| Win12 | The configured URL redirects to its upstream introduction, which rendered in-frame | Available |
+| Win12 | The boot page reached `desktop.html` with the Administrator login screen in-frame | Verified in the same tab |
 | daedalOS | Screen remained blank during the bounded test; embedding is unconfirmed | Verified desktop in the same tab |
 | WebVM | Explicit direct-only explanation; no frame created | Required for its cross-origin isolation |
 
-The supplied Win12 URL remains `https://yuxiaoli.github.io/win12/`; its client redirect belongs to that external project. WebVM returns COOP/COEP headers and requires isolation the non-isolated Pages parent cannot supply. The other five responses had no observed X-Frame-Options or frame-ancestors restriction, but that does not guarantee every application feature works inside a sandbox.
+Win12 now launches `https://win12-online.github.io/win12/boot.html`, which starts the app and navigates to its `desktop.html`, rather than the promotional homepage. The URL correction was checked in Windows Edge: both direct and computer-screen launches reached the Administrator login screen. The boot and desktop responses returned HTTP 200 with no observed X-Frame-Options or CSP framing restriction. A regression checks the canonical URL, static links on all three routes, screen-launch entry and virtual shell; the Win12 source link is unchanged.
+
+WebVM returns COOP/COEP headers and requires isolation the non-isolated Pages parent cannot supply. The other five responses had no observed X-Frame-Options or frame-ancestors restriction, but that does not guarantee every application feature works inside a sandbox.
 
 Custom `load https://example.com` and `load $home` rendered real page content in the opaque sandbox. Switching systems replaces the previous frame, closing removes it, focus returns to the launch control, and Back closes the screen. There is no timed redirect. Slow, blocked or incompatible pages retain an explicit same-tab direct-open action. No framing policy is bypassed and no proxy is used.
 
