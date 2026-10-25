@@ -1,11 +1,13 @@
 import { destinations } from './destinations';
 
-const commands = ['help', 'os list', 'boot', 'source', 'clear'];
-export function complete(line: string): string[] {
+const commands = ['help', 'ls', 'pwd', 'cwd', 'cd', 'cat', 'echo', 'boot', 'load', 'set', 'time', 'source', 'clear'];
+export function complete(line: string, variableNames: string[] = []): string[] {
   if (!line) return [];
   const lower = line.toLowerCase();
   const candidates = /^(boot|source)\s/.test(lower)
     ? destinations.map((os) => `${lower.split(/\s/)[0]} ${os.id}`)
+    : lower.startsWith('load $') ? variableNames.map((name) => `load $${name}`)
+    : /^(cd|cat|ls)\s/.test(lower) ? ['/systems', '/README.txt', '/help.txt'].map((path) => `${lower.split(/\s/)[0]} ${path}`)
     : commands;
   return candidates.filter((value) => value.startsWith(lower));
 }
@@ -13,6 +15,12 @@ export function complete(line: string): string[] {
 /** Only printable ASCII is accepted; pasted lines can never execute commands. */
 export function sanitizeInput(data: string): string {
   return data.replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, '').replace(/[\r\n]+/g, ' ').replace(/[^\x20-\x7e]/g, '');
+}
+
+export function inputWindow(line: string, cursor: number, columns: number): { text: string; cursor: number } {
+  const width = Math.max(1, columns);
+  const start = Math.max(0, cursor - width);
+  return { text: line.slice(start, start + width), cursor: cursor - start };
 }
 
 export class CommandHistory {

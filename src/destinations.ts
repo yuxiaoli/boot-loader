@@ -1,11 +1,22 @@
-/** The single source of truth for every visual link and terminal command. */
-export const destinations = [
-  { id: 'daedalos', name: 'daedalOS', path: 'daedalOS', note: 'A desktop without boundaries.', detail: 'Explore a full desktop environment, right in your browser.', year: 'WEB DESKTOP', code: '01' },
-  { id: 'macos', name: 'macOS', path: 'macos', note: 'A familiar kind of different.', detail: 'Step into a browser-based take on the Mac desktop.', year: 'APPLE INSPIRED', code: '02' },
-  { id: 'win12', name: 'Win12', path: 'win12', note: 'A glimpse of what comes next.', detail: 'Explore a community vision of a future Windows desktop.', year: 'FUTURE CONCEPT', code: '03' },
-  { id: 'winxp', name: 'WinXP', path: 'winXP', note: 'Some things never get old.', detail: 'Revisit a familiar desktop from another era.', year: 'RETRO CLASSIC', code: '04' },
-].map((os) => ({ ...os, live: `https://yuxiaoli.github.io/${os.path}/`, source: `https://github.com/yuxiaoli/${os.path}` }));
+export interface Destination {
+  id: string;
+  name: string;
+  live: string;
+  source: string;
+  note: string;
+  detail: string;
+  code: string;
+  directOnly?: string;
+}
 
-export type Destination = (typeof destinations)[number];
+/** Shared by the static selector, simulated filesystem and terminal commands. */
+export const destinations: Destination[] = [
+  { id: 'daedalos', name: 'daedalOS', live: 'https://yuxiaoli.github.io/daedalOS/', source: 'https://github.com/yuxiaoli/daedalOS', note: 'A desktop without boundaries.', detail: 'Explore a full desktop environment, right in your browser.', code: '01' },
+  { id: 'macos', name: 'macOS', live: 'https://yuxiaoli.github.io/macos/', source: 'https://github.com/yuxiaoli/macos', note: 'A familiar kind of different.', detail: 'Step into a browser-based take on the Mac desktop.', code: '02' },
+  { id: 'win12', name: 'Win12', live: 'https://yuxiaoli.github.io/win12/', source: 'https://github.com/yuxiaoli/win12', note: 'A glimpse of what comes next.', detail: 'The supplied Win12 page redirects to its upstream introduction.', code: '03' },
+  { id: 'winxp', name: 'WinXP', live: 'https://yuxiaoli.github.io/winXP/', source: 'https://github.com/yuxiaoli/winXP', note: 'Some things never get old.', detail: 'Revisit a familiar desktop from another era.', code: '04' },
+  { id: 'win11', name: 'Windows 11', live: 'https://win11.vercel.app/', source: 'https://github.com/PiyushSuthar/Windows-11-Web', note: 'A modern Windows-inspired desktop.', detail: 'A community Windows 11 desktop built with Preact.', code: '05' },
+  { id: 'webvm', name: 'WebVM', live: 'https://webvm.io/', source: 'https://github.com/leaningtech/webvm', note: 'A Linux VM for the browser.', detail: 'WebVM requires a cross-origin-isolated page. Open it directly for its WebAssembly runtime.', code: '06', directOnly: 'WebVM requires cross-origin isolation for its WebAssembly runtime. This static Pages host cannot provide that inside a frame. Open it in this tab.' },
+];
 export const repositoryUrl = 'https://github.com/yuxiaoli/boot-loader';
 export const findDestination = (id: string) => destinations.find((os) => os.id === id.toLowerCase());

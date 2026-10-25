@@ -1,18 +1,21 @@
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
-import { executeCommand } from './commands';
-import { CommandHistory, complete, sanitizeInput } from './editor';
+import { executeCommand, TerminalSession } from './commands';
+import { CommandHistory, complete, inputWindow, sanitizeInput } from './editor';
+import { terminalTheme } from './terminal-appearance';
+import { openComputer } from './screen-session';
 
 export function mountTerminal(host: HTMLElement): () => void {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const term = new Terminal({
-    theme: { background: '#000000', foreground: '#11FF00', cursor: '#11FF00', cursorAccent: '#000000', selectionBackground: '#11ff0040' },
+    theme: terminalTheme,
     fontFamily: '"Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace',
     fontSize: window.innerWidth < 640 ? 13 : 15,
     lineHeight: 1.5,
     cursorBlink: !reducedMotion,
     cursorStyle: 'block',
+    cursorInactiveStyle: 'outline',
     screenReaderMode: true,
     convertEol: true,
     scrollback: 400,
@@ -26,38 +29,42 @@ export function mountTerminal(host: HTMLElement): () => void {
   let line = '';
   let cursor = 0;
   const history = new CommandHistory();
-  const prompt = 'boot> ';
-  const maxLength = () => Math.max(10, Math.min(120, term.cols - prompt.length - 1));
+  const session = new TerminalSession(new URL(import.meta.env.BASE_URL, location.origin).href);
+  const maxLength = () => 2200;
+  const completeLine = () => complete(line, [...session.variables.keys()]);
+  const writePrompt = () => term.write(session.prompt);
   const redraw = () => {
-    term.write(`\r\x1b[2K${prompt}${line}`);
-    if (line.length > cursor) term.write(`\x1b[${line.length - cursor}D`);
+    const view = inputWindow(line, cursor, Math.max(1, term.cols - session.prompt.length - 1));
+    term.write(`\r\x1b[2K${session.prompt}${view.text}`);
+    if (view.text.length > view.cursor) term.write(`\x1b[${view.text.length - view.cursor}D`);
   };
   const reset = () => { line = ''; cursor = 0; };
   const submit = () => {
     term.write('\r\n');
     history.add(line.trim());
-    const result = executeCommand(line);
+    const result = executeCommand(line, session);
     if (result.clear) term.write('\x1b[2J\x1b[3J\x1b[H');
     result.lines.forEach((output) => term.writeln(output));
     reset();
-    term.write(prompt);
+    writePrompt();
     if (result.navigate) window.location.assign(result.navigate);
+    if (result.screen) openComputer(result.screen, host.querySelector('textarea') ?? undefined);
   };
   term.writeln('BOOT LOADER [1.0]');
-  term.writeln('Four systems. One command away.');
+  term.writeln('Six systems. A simulated shell.');
   term.writeln('');
   term.writeln('Type help for commands.');
-  term.writeln('Try: boot macos');
+  term.writeln('Try: ls | boot win11');
   term.writeln('');
-  term.write(prompt);
+  writePrompt();
   term.attachCustomKeyEventHandler((event) => {
     // Empty-prompt Tab and Shift+Tab retain normal browser focus navigation.
-    if (event.key === 'Tab' && (event.shiftKey || !line || complete(line).length === 0)) return false;
+    if (event.key === 'Tab' && (event.shiftKey || !line || completeLine().length === 0)) return false;
     return true;
   });
   term.onData((data) => {
     if (data === '\r') { submit(); return; }
-    if (data === '\x03') { term.write('^C\r\n'); reset(); term.write(prompt); return; }
+    if (data === '\x03') { term.write('^C\r\n'); reset(); writePrompt(); return; }
     if (data === '\x0c') { term.write('\x1b[2J\x1b[3J\x1b[H'); redraw(); return; }
     if (data === '\x1b[A' || data === '\x1b[B') { line = history.move(data === '\x1b[A' ? -1 : 1, line).slice(0, maxLength()); cursor = line.length; redraw(); return; }
     if (data === '\x1b[D') { cursor = Math.max(0, cursor - 1); redraw(); return; }
@@ -68,7 +75,7 @@ export function mountTerminal(host: HTMLElement): () => void {
     if (data === '\x1b[3~') { line = line.slice(0, cursor) + line.slice(cursor + 1); redraw(); return; }
     if (data === '\x15') { reset(); redraw(); return; }
     if (data === '\t') {
-      const matches = complete(line);
+      const matches = completeLine();
       if (matches.length === 1) { line = matches[0].slice(0, maxLength()); cursor = line.length; }
       else if (matches.length > 1) { term.write('\r\n'); term.writeln(matches.join('  ')); }
       redraw(); return;
@@ -79,8 +86,7 @@ export function mountTerminal(host: HTMLElement): () => void {
   });
   const observer = new ResizeObserver(() => {
     fit.fit();
-    const cropped = line.slice(0, maxLength());
-    if (cropped !== line) { line = cropped; cursor = Math.min(cursor, line.length); redraw(); }
+    redraw();
   });
   observer.observe(host);
   window.addEventListener('pagehide', (event) => {

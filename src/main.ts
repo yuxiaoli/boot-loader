@@ -1,5 +1,12 @@
 import './style.css';
+import './visual-refinement.css';
+import './screen.css';
 import { destinations } from './destinations';
+import { initializeScreenSession } from './screen-session';
+import { trackTerminalAppearance } from './terminal-appearance';
+
+initializeScreenSession();
+trackTerminalAppearance();
 
 const selectButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-select]'));
 function selectSystem(id: string, focus = false) {
