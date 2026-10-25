@@ -1,18 +1,55 @@
 import { expect, test } from 'vitest';
 import { executeCommand, TerminalSession } from '../src/commands';
 import { CommandHistory, complete, sanitizeInput } from '../src/editor';
-import { findDestination } from '../src/destinations';
+import { destinations, findDestination } from '../src/destinations';
 import { renderPage } from '../src/render';
 
-test('boot requires an explicit ID and resolves all six systems independently of selection', () => {
+test('boot requires an explicit ID and resolves all seven systems independently of selection', () => {
   expect(executeCommand('boot macos').navigate).toBe('https://yuxiaoli.github.io/macos/');
   expect(executeCommand('boot win12').navigate).toBe('https://win12-online.github.io/win12/boot.html');
   expect(executeCommand('boot winxp').navigate).toBe('https://yuxiaoli.github.io/winXP/');
   expect(executeCommand('boot daedalos').navigate).toBe('https://yuxiaoli.github.io/daedalOS/');
   expect(executeCommand('boot WIN11').navigate).toBe('https://sean-windows-11-web.vercel.app/');
   expect(executeCommand('boot webvm').navigate).toBe('https://webvm.io/');
+  expect(executeCommand('boot ubuntu').navigate).toBe('https://yuxiaoli.github.io/ubuntu-web/');
   expect(executeCommand('boot').navigate).toBeUndefined();
   expect(executeCommand('boot').lines.join('\n')).toContain('Usage: boot <system>');
+});
+
+test('Ubuntu is the seventh shared destination with both launch modes and the original integrations preserved', () => {
+  expect(destinations.map(({id,live,source}) => ({id,live,source}))).toEqual([
+    {id:'daedalos',live:'https://yuxiaoli.github.io/daedalOS/',source:'https://github.com/yuxiaoli/daedalOS'},
+    {id:'macos',live:'https://yuxiaoli.github.io/macos/',source:'https://github.com/yuxiaoli/macos'},
+    {id:'win12',live:'https://win12-online.github.io/win12/boot.html',source:'https://github.com/yuxiaoli/win12'},
+    {id:'winxp',live:'https://yuxiaoli.github.io/winXP/',source:'https://github.com/yuxiaoli/winXP'},
+    {id:'win11',live:'https://sean-windows-11-web.vercel.app/',source:'https://github.com/yuxiaoli/Windows-11-Web/tree/develop'},
+    {id:'webvm',live:'https://webvm.io/',source:'https://github.com/leaningtech/webvm'},
+    {id:'ubuntu',live:'https://yuxiaoli.github.io/ubuntu-web/',source:'https://github.com/yuxiaoli/ubuntu-web/tree/develop'},
+  ]);
+  const session = new TerminalSession();
+  executeCommand('cd /', session);
+  const embedded = executeCommand('boot UBUNTU --embed', session);
+  expect(embedded.screen).toEqual({url:'https://yuxiaoli.github.io/ubuntu-web/',label:'Ubuntu',kind:'registry',directOnly:undefined});
+  expect(embedded.navigate).toBeUndefined();
+  expect(executeCommand('source ubuntu').navigate).toBe('https://github.com/yuxiaoli/ubuntu-web/tree/develop');
+  expect(executeCommand('ls /systems', session).lines).toHaveLength(7);
+  expect(executeCommand('ls /systems', session).lines.join('\n')).toContain('ubuntu');
+  expect(executeCommand('cat /systems/ubuntu', session).lines).toContain('https://yuxiaoli.github.io/ubuntu-web/');
+  expect(complete('boot ub')).toEqual(['boot ubuntu']);
+  expect(complete('boot ubuntu --em')).toEqual(['boot ubuntu --embed']);
+  expect(complete('source ub')).toEqual(['source ubuntu']);
+  expect(executeCommand('help').lines.join('\n')).toContain('ubuntu');
+  for (const page of ['home','visual','terminal'] as const) {
+    const html = renderPage(page);
+    expect(html).toContain('href="https://yuxiaoli.github.io/ubuntu-web/"');
+    expect(html).toContain('href="https://github.com/yuxiaoli/ubuntu-web/tree/develop"');
+    expect(html).not.toMatch(/\bsix\b/i);
+    if (page !== 'terminal') {
+      const card = html.match(/<article[^>]*data-system="ubuntu">([\s\S]*?)<\/article>/)?.[1];
+      expect(card).toContain('<svg');
+      expect(card).toContain('data-embed="ubuntu"');
+    }
+  }
 });
 
 test('Win11 uses the personalized app and fork source throughout both launch modes', () => {
@@ -101,10 +138,10 @@ test('help, list, source and clear provide useful results without shell executio
   expect(executeCommand('').lines).toEqual([]);
 });
 
-test('a session starts among six systems and navigates a virtual filesystem safely', () => {
+test('a session starts among seven systems and navigates a virtual filesystem safely', () => {
   const session = new TerminalSession();
   expect(executeCommand('pwd', session).lines).toEqual(['/systems']);
-  expect(executeCommand('ls', session).lines).toHaveLength(6);
+  expect(executeCommand('ls', session).lines).toHaveLength(7);
   expect(executeCommand('os list', session).lines.join('\n')).toContain('Unknown command');
   executeCommand('cd ..', session);
   expect(executeCommand('cwd', session).lines).toEqual(['/']);

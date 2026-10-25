@@ -27,7 +27,7 @@ export function computerIllustration(): string {
       <text x="224" y="171" font-size="7">SELECTED SYSTEM</text>
       <text data-screen-name x="224" y="194" font-size="19" fill="#34373d">daedalOS</text>
       <text data-screen-command x="224" y="218" font-size="8">&gt; boot daedalos_</text>
-      <text x="112" y="463" font-size="8" letter-spacing="1.7">A SMALL COMPUTER. SIX POSSIBILITIES.</text>
+      <text x="112" y="463" font-size="8" letter-spacing="1.7">A SMALL COMPUTER. ${destinations.length} POSSIBILITIES.</text>
     </g>
   </svg></div>`;
 }

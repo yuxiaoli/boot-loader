@@ -4,6 +4,11 @@ import { computerIllustration, screenDialog } from './computer.ts';
 type Page = 'home' | 'visual' | 'terminal';
 const base = '/boot-loader/';
 
+function systemMark(id: string): string {
+  if (id === 'ubuntu') return '<svg width="28" height="28" viewBox="0 0 32 32" fill="currentColor" focusable="false"><circle cx="16" cy="16" r="8.4" fill="none" stroke="currentColor" stroke-width="2.6" stroke-dasharray="12.9 4.7" transform="rotate(-90 16 16)"/><circle cx="16" cy="3" r="3"/><circle cx="27.3" cy="22.5" r="3"/><circle cx="4.7" cy="22.5" r="3"/></svg>';
+  return id === 'daedalos' ? 'd' : id === 'macos' ? '\u2318' : id === 'webvm' ? '&gt;_' : '<span></span><span></span><span></span><span></span>';
+}
+
 function header(page: Page): string {
   return `<a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header wrap">
@@ -22,7 +27,7 @@ function visual(): string {
     <div class="hero">
       <div class="hero-copy"><p class="eyebrow"><span class="status-dot"></span> SYSTEM SELECTOR</p>
         <h1 id="visual-heading">A new window.<br>A familiar world.</h1>
-        <p class="hero-description">Six browser systems. Choose where to begin.</p>
+        <p class="hero-description">${destinations.length} browser systems. Choose where to begin.</p>
         <a class="text-link" href="#systems">Choose a system <span aria-hidden="true">↓</span></a>
       </div>
       ${computerIllustration()}
@@ -31,7 +36,7 @@ function visual(): string {
     <div class="system-list" aria-label="Browser desktops">${destinations.map((os, i) => `
       <article class="system-row ${i === 0 ? 'is-selected' : ''}" data-system="${os.id}">
         <button class="system-choice" data-select="${os.id}" aria-pressed="${i === 0}" aria-label="Select ${os.name}">
-          <span class="system-index mono">${os.code}</span><span class="system-mark mark-${os.id}" aria-hidden="true">${os.id === 'daedalos' ? 'd' : os.id === 'macos' ? '⌘' : os.id === 'webvm' ? '&gt;_' : '<span></span><span></span><span></span><span></span>'}</span>
+          <span class="system-index mono">${os.code}</span><span class="system-mark mark-${os.id}" aria-hidden="true">${systemMark(os.id)}</span>
           <span class="system-name">${os.name}</span><span class="selection-marker" aria-hidden="true"></span>
         </button>
         <p class="system-note">${os.note}</p>
@@ -55,7 +60,7 @@ function terminal(standalone: boolean): string {
         <p class="terminal-loading" id="terminal-loading">Loading console… Ordinary desktop links are available below.</p>
         <div id="terminal-host" aria-label="Boot Loader terminal" aria-describedby="terminal-guide"></div>
       </div>
-      <p id="terminal-guide" class="terminal-guide">Type <code>help</code> to begin. <kbd>↑</kbd><kbd>↓</kbd> history · <kbd>Tab</kbd> completion · <kbd>Shift</kbd>+<kbd>Tab</kbd> leave terminal. A simulated shell. Type ls to list six systems.</p>
+      <p id="terminal-guide" class="terminal-guide">Type <code>help</code> to begin. <kbd>↑</kbd><kbd>↓</kbd> history · <kbd>Tab</kbd> completion · <kbd>Shift</kbd>+<kbd>Tab</kbd> leave terminal. A simulated shell. Type ls to list ${destinations.length} systems.</p>
       <details class="command-reference"><summary>Commands &amp; desktop links</summary><p><code>help</code> · <code>ls</code> · <code>pwd</code> · <code>cd &lt;path&gt;</code> · <code>cat &lt;path&gt;</code> · <code>time</code> · <code>boot &lt;system&gt; [--embed]</code> · <code>source [system]</code> · <code>clear</code> · <code>load &lt;URL|$name&gt;</code> · <code>set home=https://example.com</code></p>
         <ul>${destinations.map((os) => `<li><span><code>${os.id}</code> / ${os.name}</span><a href="${os.live}">Boot ${os.name} ↗</a><a href="${os.source}">${os.name} source ↗</a></li>`).join('')}</ul>
       </details>

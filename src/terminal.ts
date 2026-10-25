@@ -5,6 +5,7 @@ import { executeCommand, TerminalSession } from './commands';
 import { CommandHistory, complete, inputWindow, sanitizeInput } from './editor';
 import { terminalTheme } from './terminal-appearance';
 import { openComputer } from './screen-session';
+import { destinations } from './destinations';
 
 export function mountTerminal(host: HTMLElement): () => void {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -51,7 +52,7 @@ export function mountTerminal(host: HTMLElement): () => void {
     if (result.screen) openComputer(result.screen, host.querySelector('textarea') ?? undefined);
   };
   term.writeln('BOOT LOADER [1.0]');
-  term.writeln('Six systems. A simulated shell.');
+  term.writeln(`${destinations.length} systems. A simulated shell.`);
   term.writeln('');
   term.writeln('Type help for commands.');
   term.writeln('Try: ls | boot win11');

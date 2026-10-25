@@ -2,7 +2,7 @@
 
 Pure static Vite + TypeScript, with no server, account, API, tracking or runtime CDN. No 3D runtime or image-generation assets. Native SVG is a compact Macintosh-inspired technical line drawing; its front plane uses a regular cabinet ratio and one consistent depth vector. Reference: the original Macintosh 128K at the Apple Museum in Prague (Wikimedia Commons). System fonts keep first load self-contained.
 
-`src/destinations.ts` contains six confirmed destinations and supplies static HTML, selector behavior, the virtual `/systems` directory and command routing. Source URL casing is intentionally preserved, including `winXP` and `daedalOS`.
+`src/destinations.ts` contains seven confirmed destinations and supplies static HTML, selector behavior, the virtual `/systems` directory and command routing. Source URL casing is intentionally preserved, including `winXP` and `daedalOS`. Visible counts are derived from that registry.
 
 Vite's HTML transform writes complete content into three independent entry documents: `/boot-loader/`, `/boot-loader/visual/`, `/boot-loader/terminal/`. Ordinary live and source links work without JavaScript. Pages never needs an SPA rewrite. The home terminal is the final section. The visual route never loads xterm; home loads it on approach to the bottom, and terminal loads it when visible.
 
@@ -17,3 +17,12 @@ Screen sessions are native accessible dialogs, with a readable, unwarped 3:2 dis
 Custom `load` URLs always use an opaque-origin sandbox (`allow-scripts allow-forms`), no referrer, and explicit camera/microphone/location/payment/clipboard denials. They receive no top-navigation or popup permission. Registry demos additionally need `allow-same-origin` for their app storage; same-origin user-owned GitHub Pages demos are therefore trusted integrations, not a security isolation boundary. Their source links remain inspectable. WebVM cannot gain cross-origin isolation from this non-isolated Pages parent and uses a direct tab.
 
 Use `develop` for implementation and GitHub Pages deployment. The Pages workflow validates both branches and deploys only `develop`; `main` is retained separately. The existing `github-pages` environment must permit `develop`. Do not bypass or change its protection rules as part of a release. `version.json` and the revision meta tag record the exact source commit. All action references are pinned.
+
+## Ubuntu integration plan
+
+Scope recorded before implementation: append Ubuntu as destination `ubuntu` (07), using `https://yuxiaoli.github.io/ubuntu-web/` and `https://github.com/yuxiaoli/ubuntu-web/tree/develop`. Preserve all six existing live/source destinations, the Win12 boot URL and the sole `--embed` option. This integration does not modify any destination repository.
+
+- Add a lightweight native SVG mark and visual row. Derive visible counts from the shared registry so the selector, illustration, terminal and virtual help stay consistent at seven entries.
+- Reuse ordinary current-tab links, `boot ubuntu`, `source ubuntu`, completion, `/systems` and the existing screen controller for `boot ubuntu --embed`. Keep its sandbox, cleanup and explicit direct fallback.
+- Add a failing regression first, then check the full seven-entry inventory, commands, markup and all three production routes. Independently inspect the personalized desktop, an in-frame app interaction, Exit/Back and mobile host layout, including screenshots; distinguish viewport emulation from physical devices.
+- Validate and publish the exact tested commit through `develop` without force pushes. Preserve `main`, draft PR1 and environment protections. Compare the live version and every public asset with the successful CI artifact, then verify live launches. Report external-app and platform limits honestly.

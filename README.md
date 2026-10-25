@@ -1,6 +1,6 @@
 # Boot Loader
 
-A pure static entry point to six browser systems, with a light visual selector and a real xterm.js simulated shell.
+A pure static entry point to seven browser systems, with a light visual selector and a real xterm.js simulated shell.
 
 Live: https://yuxiaoli.github.io/boot-loader/
 
@@ -28,7 +28,7 @@ The build creates a real `index.html` for each route, including accessible links
 
 ## Commands
 
-Start in `/systems`. `ls` lists `daedalos`, `macos`, `win12`, `winxp`, `win11` and `webvm`.
+Start in `/systems`. `ls` lists `daedalos`, `macos`, `win12`, `winxp`, `win11`, `webvm` and `ubuntu`.
 
 ```text
 help
@@ -38,6 +38,7 @@ cd ..
 cat README.txt
 boot win11
 boot win12 --embed
+boot ubuntu --embed
 load https://example.com
 set home=https://example.com
 load $home
