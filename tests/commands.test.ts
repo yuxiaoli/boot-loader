@@ -28,6 +28,32 @@ test('Win12 uses the actual boot page across visual links, screen selection and 
   }
 });
 
+test('boot can explicitly use the computer screen while retaining mandatory IDs and direct launches', () => {
+  const session = new TerminalSession();
+  executeCommand('cd /', session);
+  const embedded = executeCommand('boot win12 --embed', session);
+  expect(embedded.screen).toEqual({ url: 'https://win12-online.github.io/win12/boot.html', label: 'Win12', kind: 'registry', directOnly: undefined });
+  expect(embedded.navigate).toBeUndefined();
+  expect(executeCommand('boot --embed WIN11', session).screen?.url).toBe('https://win11.vercel.app/');
+  expect(executeCommand('boot win11', session).navigate).toBe('https://win11.vercel.app/');
+  expect(executeCommand('boot webvm --embed', session).screen?.directOnly).toContain('cross-origin isolation');
+  expect(executeCommand('boot --embed', session).lines[0]).toBe('Usage: boot <system> [--embed]');
+  expect(executeCommand('boot win12 --unknown', session).lines[0]).toBe('Unknown boot option: --unknown');
+  for (const input of ['boot --embed', 'boot win12 --embed --embed', 'boot win12 --unknown', 'boot win12 --in-computer', 'boot unknown --embed', 'boot win12 extra --embed', 'source win12 --embed']) {
+    const result = executeCommand(input, session);
+    expect(result.navigate, input).toBeUndefined();
+    expect(result.screen, input).toBeUndefined();
+    expect(result.lines.length, input).toBeGreaterThan(0);
+  }
+  expect(executeCommand('help').lines.join('\n')).toContain('--embed');
+});
+
+test('completion discovers the computer option and its mandatory system argument', () => {
+  expect(complete('boot win12 --em')).toEqual(['boot win12 --embed']);
+  expect(complete('boot --em')).toEqual(['boot --embed']);
+  expect(complete('boot --embed win')).toEqual(['boot --embed win12', 'boot --embed winxp', 'boot --embed win11']);
+});
+
 test('completion, history and pasted text preserve an editable safe command line', () => {
   expect(complete('bo')).toEqual(['boot']);
   expect(complete('boot w')).toEqual(['boot win12', 'boot winxp', 'boot win11', 'boot webvm']);

@@ -13,6 +13,7 @@ export const helpLines = [
   '  cat <path>       Read a virtual text file',
   '  echo <text>      Print literal text',
   '  boot <system>    Open a system in this tab',
+  '    --embed        Try its computer screen instead',
   '  load <URL|$name> Try a page in the computer screen',
   '  set name=<URL>   Save a session-only URL',
   '  time             Local time and browser time zone',
@@ -32,7 +33,8 @@ const readme = [
   'All files, directories and variables are virtual.',
   'No host files, OS environment or processes are used.',
   '/systems contains the six launchable systems.',
-  'boot <id> always opens that system in this tab.',
+  'boot <id> opens that system in this tab.',
+  'boot <id> --embed tries its computer screen.',
   'load <URL> tries a restricted embedded page.',
   'Some pages require a direct tab. Nothing is proxied.',
   'Session state disappears when this page reloads.',
@@ -41,7 +43,7 @@ const nodes = new Map<string, Node>([
   ['/', { kind: 'directory' }], ['/systems', { kind: 'directory' }],
   ['/README.txt', { kind: 'file', lines: readme }],
   ['/help.txt', { kind: 'file', lines: helpLines }],
-  ...destinations.map((os): [string, Node] => [`/systems/${os.id}`, { kind: 'file', lines: [os.name, os.live, `Source: ${os.source}`, `Launch: boot ${os.id}`] }]),
+  ...destinations.map((os): [string, Node] => [`/systems/${os.id}`, { kind: 'file', lines: [os.name, os.live, `Source: ${os.source}`, `Launch: boot ${os.id}`, `Screen: boot ${os.id} --embed`] }]),
 ]);
 
 export function resolveVirtualPath(path: string, cwd: string): string | undefined {
@@ -118,9 +120,17 @@ export function executeCommand(input: string, session = new TerminalSession()): 
   }
   if (command === 'source' && !argument) return { lines: [`Boot Loader: ${repositoryUrl}`, ...destinations.map((os) => `${os.name}: ${os.source}`), 'Use source <system> to open a repository.'] };
   if (command === 'boot' || command === 'source') {
-    if (args.length !== 1) return { lines: [`Usage: ${command} <system>`, `Systems: ${destinations.map((os) => os.id).join(', ')}`] };
-    const os = findDestination(args[0]);
-    if (!os) return { lines: [`Unknown system: ${args[0]}`, 'Run ls /systems to see available systems.'] };
+    const embed = command === 'boot' && args.includes('--embed');
+    const ids = embed ? args.filter((arg) => arg !== '--embed') : args;
+    const usage = [`Usage: ${command} <system>${command === 'boot' ? ' [--embed]' : ''}`, `Systems: ${destinations.map((os) => os.id).join(', ')}`];
+    if (command === 'boot') {
+      const unknownOption = args.find((arg) => arg.startsWith('-') && arg !== '--embed');
+      if (unknownOption) return { lines: [`Unknown boot option: ${unknownOption}`, ...usage] };
+    }
+    if (ids.length !== 1 || args.length !== (embed ? 2 : 1)) return { lines: usage };
+    const os = findDestination(ids[0]);
+    if (!os) return { lines: [`Unknown system: ${ids[0]}`, 'Run ls /systems to see available systems.'] };
+    if (embed) return { lines: [`Opening ${os.name} in the computer screen...`], screen: { url: os.live, label: os.name, kind: 'registry', directOnly: os.directOnly } };
     return { lines: [`Opening ${os.name}${command === 'source' ? ' source' : ''}...`], navigate: command === 'source' ? os.source : os.live };
   }
   return { lines: [`Unknown command: ${command}`, 'Type help for available commands.'] };

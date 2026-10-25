@@ -4,11 +4,15 @@ const commands = ['help', 'ls', 'pwd', 'cwd', 'cd', 'cat', 'echo', 'boot', 'load
 export function complete(line: string, variableNames: string[] = []): string[] {
   if (!line) return [];
   const lower = line.toLowerCase();
-  const candidates = /^(boot|source)\s/.test(lower)
-    ? destinations.map((os) => `${lower.split(/\s/)[0]} ${os.id}`)
-    : lower.startsWith('load $') ? variableNames.map((name) => `load $${name}`)
-    : /^(cd|cat|ls)\s/.test(lower) ? ['/systems', '/README.txt', '/help.txt'].map((path) => `${lower.split(/\s/)[0]} ${path}`)
-    : commands;
+  let candidates = commands;
+  if (lower.startsWith('boot ')) {
+    const parts = lower.split(' ');
+    if (parts[1] === '--embed' && parts.length > 2) candidates = destinations.map((os) => `boot --embed ${os.id}`);
+    else if (destinations.some((os) => os.id === parts[1]) && parts.length > 2) candidates = [`boot ${parts[1]} --embed`];
+    else candidates = [...destinations.map((os) => `boot ${os.id}`), 'boot --embed'];
+  } else if (lower.startsWith('source ')) candidates = destinations.map((os) => `source ${os.id}`);
+  else if (lower.startsWith('load $')) candidates = variableNames.map((name) => `load $${name}`);
+  else if (/^(cd|cat|ls)\s/.test(lower)) candidates = ['/systems', '/README.txt', '/help.txt'].map((path) => `${lower.split(/\s/)[0]} ${path}`);
   return candidates.filter((value) => value.startsWith(lower));
 }
 

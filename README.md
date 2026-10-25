@@ -37,6 +37,7 @@ pwd
 cd ..
 cat README.txt
 boot win11
+boot win12 --embed
 load https://example.com
 set home=https://example.com
 load $home
@@ -46,7 +47,7 @@ source webvm
 clear
 ```
 
-`cwd` is an alias for `pwd`. Paths are virtual, with root, relative paths, `.` and `..`; `cd` without a path returns to `/systems`. `boot <id>` always requires an explicit system and opens it in the current tab, independently of selection or directory. There is no `os list` alias.
+`cwd` is an alias for `pwd`. Paths are virtual, with root, relative paths, `.` and `..`; `cd` without a path returns to `/systems`. `boot <id>` always requires an explicit system, independently of selection or directory. It opens the current tab by default; `boot <id> --embed` tries the same computer-screen session as the visual selector, including its direct-open fallback. `--embed` is the only boot option; unknown or repeated options show an error or usage. There is no `os list` alias.
 
 `load` accepts explicit HTTP/HTTPS URLs and rejects embedded credentials, unsafe schemes and self-embedding. `set name=<URL>` stores up to 16 URL values in this page's memory. Names use lowercase letters, digits and underscores, start with a letter and are at most 32 characters; references such as `$home` are case-sensitive and expand exactly once. URL values are at most 2048 characters. State and command history are never saved to browser storage or a server. Reloading resets the simulated session. `time` reads a new local browser Date and actual Intl time zone each time.
 

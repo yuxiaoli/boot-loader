@@ -56,7 +56,7 @@ function terminal(standalone: boolean): string {
         <div id="terminal-host" aria-label="Boot Loader terminal" aria-describedby="terminal-guide"></div>
       </div>
       <p id="terminal-guide" class="terminal-guide">Type <code>help</code> to begin. <kbd>↑</kbd><kbd>↓</kbd> history · <kbd>Tab</kbd> completion · <kbd>Shift</kbd>+<kbd>Tab</kbd> leave terminal. A simulated shell. Type ls to list six systems.</p>
-      <details class="command-reference"><summary>Commands &amp; desktop links</summary><p><code>help</code> · <code>ls</code> · <code>pwd</code> · <code>cd &lt;path&gt;</code> · <code>cat &lt;path&gt;</code> · <code>time</code> · <code>boot &lt;system&gt;</code> · <code>source [system]</code> · <code>clear</code> · <code>load &lt;URL|$name&gt;</code> · <code>set home=https://example.com</code></p>
+      <details class="command-reference"><summary>Commands &amp; desktop links</summary><p><code>help</code> · <code>ls</code> · <code>pwd</code> · <code>cd &lt;path&gt;</code> · <code>cat &lt;path&gt;</code> · <code>time</code> · <code>boot &lt;system&gt; [--embed]</code> · <code>source [system]</code> · <code>clear</code> · <code>load &lt;URL|$name&gt;</code> · <code>set home=https://example.com</code></p>
         <ul>${destinations.map((os) => `<li><span><code>${os.id}</code> / ${os.name}</span><a href="${os.live}">Boot ${os.name} ↗</a><a href="${os.source}">${os.name} source ↗</a></li>`).join('')}</ul>
       </details>
       <div class="terminal-footer"><span>Boot Loader <span aria-hidden="true">/</span> Built for the browser.</span><a href="${repositoryUrl}">View source ↗</a></div>
