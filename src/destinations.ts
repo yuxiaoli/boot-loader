@@ -15,7 +15,7 @@ export const destinations: Destination[] = [
   { id: 'macos', name: 'macOS', live: 'https://yuxiaoli.github.io/macos/', source: 'https://github.com/yuxiaoli/macos', note: 'A familiar kind of different.', detail: 'Step into a browser-based take on the Mac desktop.', code: '02' },
   { id: 'win12', name: 'Win12', live: 'https://win12-online.github.io/win12/boot.html', source: 'https://github.com/yuxiaoli/win12', note: 'A glimpse of what comes next.', detail: 'Boot the Windows 12 web desktop.', code: '03' },
   { id: 'winxp', name: 'WinXP', live: 'https://yuxiaoli.github.io/winXP/', source: 'https://github.com/yuxiaoli/winXP', note: 'Some things never get old.', detail: 'Revisit a familiar desktop from another era.', code: '04' },
-  { id: 'win11', name: 'Windows 11', live: 'https://win11.vercel.app/', source: 'https://github.com/PiyushSuthar/Windows-11-Web', note: 'A modern Windows-inspired desktop.', detail: 'A community Windows 11 desktop built with Preact.', code: '05' },
+  { id: 'win11', name: 'Windows 11', live: 'https://sean-windows-11-web.vercel.app/', source: 'https://github.com/yuxiaoli/Windows-11-Web/tree/develop', note: 'A modern Windows-inspired desktop.', detail: 'A community Windows 11 desktop built with Preact.', code: '05' },
   { id: 'webvm', name: 'WebVM', live: 'https://webvm.io/', source: 'https://github.com/leaningtech/webvm', note: 'A Linux VM for the browser.', detail: 'WebVM requires a cross-origin-isolated page. Open it directly for its WebAssembly runtime.', code: '06', directOnly: 'WebVM requires cross-origin isolation for its WebAssembly runtime. This static Pages host cannot provide that inside a frame. Open it in this tab.' },
 ];
 export const repositoryUrl = 'https://github.com/yuxiaoli/boot-loader';

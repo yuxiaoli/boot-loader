@@ -2,7 +2,7 @@
 
 The refinement was checked against production `dist` files served at `/boot-loader/` with Vite preview, in Windows Chrome.
 
-- `npm run check` passes TypeScript, 13 tests across four files, production build and static-output verification.
+- `npm run check` passes TypeScript, 14 tests across four files, production build and static-output verification.
 - Tests cover all six explicit boot IDs, missing/unknown arguments, removal of the old list command, virtual filesystem navigation and errors, completion/history/paste handling, long editable input, URL validation and recursion prevention, bounded session variables, fresh local time and screen sandbox/mixed-content policy.
 - All three routes load at 320, 390, 768 and 1280 pixels without horizontal page overflow. Direct entry and refresh work under the repository base path. No frame exists before explicit launch; all six systems remain available through ordinary links.
 - Keyboard completion expands `boo` to `boot`; bare `boot` displays usage. Initial `ls` lists all six systems. `cd /`, `pwd`, `cat README.txt`, `time`, `set home=https://example.com` and `load $home` were exercised in the browser. Booting Windows 11 from virtual `/` navigates the current tab; Back restores a working console. A long command retained all characters through a 320-pixel viewport resize.
@@ -17,13 +17,15 @@ All six configured demo addresses returned HTTP 200 when checked. Their source l
 | Target | Observed screen result | Direct opening |
 | --- | --- | --- |
 | macOS | Finder, desktop menu and dock rendered | Available |
-| Windows 11 | Desktop icons and taskbar rendered | Verified in the same tab |
+| Windows 11 | Personalized desktop and Start menu with Sean profile and fork GitHub link rendered | Verified in the same tab |
 | WinXP | Desktop, My Computer and Minesweeper rendered; its own browser demo has an unrelated external DNS failure | Available |
 | Win12 | The boot page reached `desktop.html` with the Administrator login screen in-frame | Verified in the same tab |
 | daedalOS | Screen remained blank during the bounded test; embedding is unconfirmed | Verified desktop in the same tab |
 | WebVM | Explicit direct-only explanation; no frame created | Required for its cross-origin isolation |
 
-Win12 now launches `https://win12-online.github.io/win12/boot.html`, which starts the app and navigates to its `desktop.html`, rather than the promotional homepage. The URL correction was checked in Windows Edge: both direct and computer-screen launches reached the Administrator login screen. The boot and desktop responses returned HTTP 200 with no observed X-Frame-Options or CSP framing restriction. A regression checks the canonical URL, static links on all three routes, screen-launch entry and virtual shell; the Win12 source link is unchanged.
+Windows 11 launches `https://sean-windows-11-web.vercel.app/`, with source at `https://github.com/yuxiaoli/Windows-11-Web/tree/develop`. Independent Windows Edge checks observed the anonymous desktop, "Sean's Windows 11 Web" title, Sean profile and fork GitHub link, including inside the computer launched by `boot win11 --embed`. Plain `boot win11` navigated the current tab; Back restored the working terminal, and Back from the computer removed its iframe and returned focus to the command input. The app returned HTTP 200 with no observed X-Frame-Options or CSP restriction. These checks cover integration and desktop startup; the fork's other app features, mobile behavior and offline mode were not independently revalidated.
+
+Win12 launches `https://win12-online.github.io/win12/boot.html`, which starts the app and navigates to its `desktop.html`, rather than the promotional homepage. The URL correction was checked in Windows Edge: both direct and computer-screen launches reached the Administrator login screen. The boot and desktop responses returned HTTP 200 with no observed X-Frame-Options or CSP framing restriction. A regression checks the canonical URL, static links on all three routes, screen-launch entry and virtual shell; the Win12 source link is unchanged.
 
 The terminal uses `boot <id> --embed` for an explicit computer-screen launch; plain `boot <id>` retains current-tab navigation. Windows Edge checks confirmed completion from `boot win12 --em`, the embedded Administrator screen, clear missing-target and unknown-option errors, and WebVM's direct-only explanation with zero frames. Parser tests also cover repeated options, unknown IDs, mandatory targets, the rejected provisional option and flag completion. The same screen controller, sandbox and direct fallback are reused.
 
