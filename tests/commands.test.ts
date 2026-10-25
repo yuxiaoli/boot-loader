@@ -9,7 +9,7 @@ test('boot requires an explicit ID and resolves all seven systems independently 
   expect(executeCommand('boot win12').navigate).toBe('https://win12-online.github.io/win12/boot.html');
   expect(executeCommand('boot winxp').navigate).toBe('https://yuxiaoli.github.io/winXP/');
   expect(executeCommand('boot daedalos').navigate).toBe('https://yuxiaoli.github.io/daedalOS/');
-  expect(executeCommand('boot WIN11').navigate).toBe('https://sean-windows-11-web.vercel.app/');
+  expect(executeCommand('boot WIN11').navigate).toBe('https://yuxiaoli.github.io/Windows-11-Web/');
   expect(executeCommand('boot webvm').navigate).toBe('https://webvm.io/');
   expect(executeCommand('boot ubuntu').navigate).toBe('https://yuxiaoli.github.io/ubuntu-web/');
   expect(executeCommand('boot').navigate).toBeUndefined();
@@ -22,7 +22,7 @@ test('Ubuntu is the seventh shared destination with both launch modes and the or
     {id:'macos',live:'https://yuxiaoli.github.io/macos/',source:'https://github.com/yuxiaoli/macos'},
     {id:'win12',live:'https://win12-online.github.io/win12/boot.html',source:'https://github.com/yuxiaoli/win12'},
     {id:'winxp',live:'https://yuxiaoli.github.io/winXP/',source:'https://github.com/yuxiaoli/winXP'},
-    {id:'win11',live:'https://sean-windows-11-web.vercel.app/',source:'https://github.com/yuxiaoli/Windows-11-Web/tree/develop'},
+    {id:'win11',live:'https://yuxiaoli.github.io/Windows-11-Web/',source:'https://github.com/yuxiaoli/Windows-11-Web/tree/develop'},
     {id:'webvm',live:'https://webvm.io/',source:'https://github.com/leaningtech/webvm'},
     {id:'ubuntu',live:'https://yuxiaoli.github.io/ubuntu-web/',source:'https://github.com/yuxiaoli/ubuntu-web/tree/develop'},
   ]);
@@ -52,9 +52,10 @@ test('Ubuntu is the seventh shared destination with both launch modes and the or
   }
 });
 
-test('Win11 uses the personalized app and fork source throughout both launch modes', () => {
-  const live = 'https://sean-windows-11-web.vercel.app/';
+test('Win11 preserves its Pages repository base path and fork source throughout both launch modes', () => {
+  const live = 'https://yuxiaoli.github.io/Windows-11-Web/';
   const source = 'https://github.com/yuxiaoli/Windows-11-Web/tree/develop';
+  expect(new URL(live, 'https://yuxiaoli.github.io/boot-loader/terminal/').pathname).toBe('/Windows-11-Web/');
   expect(findDestination('win11')?.live).toBe(live);
   expect(findDestination('win11')?.source).toBe(source);
   expect(executeCommand('boot win11 --embed').screen?.url).toBe(live);
@@ -67,6 +68,8 @@ test('Win11 uses the personalized app and fork source throughout both launch mod
     expect(html).toContain(`href="${live}"`);
     expect(html).toContain(`href="${source}"`);
     expect(html).not.toContain('href="https://win11.vercel.app/"');
+    expect(html).not.toContain('href="https://sean-windows-11-web.vercel.app/"');
+    expect(html).not.toContain('href="https://yuxiaoli.github.io/boot-loader/Windows-11-Web/"');
     expect(html).not.toContain('href="https://github.com/PiyushSuthar/Windows-11-Web"');
   }
 });
@@ -90,8 +93,8 @@ test('boot can explicitly use the computer screen while retaining mandatory IDs 
   const embedded = executeCommand('boot win12 --embed', session);
   expect(embedded.screen).toEqual({ url: 'https://win12-online.github.io/win12/boot.html', label: 'Win12', kind: 'registry', directOnly: undefined });
   expect(embedded.navigate).toBeUndefined();
-  expect(executeCommand('boot --embed WIN11', session).screen?.url).toBe('https://sean-windows-11-web.vercel.app/');
-  expect(executeCommand('boot win11', session).navigate).toBe('https://sean-windows-11-web.vercel.app/');
+  expect(executeCommand('boot --embed WIN11', session).screen?.url).toBe('https://yuxiaoli.github.io/Windows-11-Web/');
+  expect(executeCommand('boot win11', session).navigate).toBe('https://yuxiaoli.github.io/Windows-11-Web/');
   expect(executeCommand('boot webvm --embed', session).screen?.directOnly).toContain('cross-origin isolation');
   expect(executeCommand('boot --embed', session).lines[0]).toBe('Usage: boot <system> [--embed]');
   expect(executeCommand('boot win12 --unknown', session).lines[0]).toBe('Unknown boot option: --unknown');
@@ -147,7 +150,7 @@ test('a session starts among seven systems and navigates a virtual filesystem sa
   expect(executeCommand('cwd', session).lines).toEqual(['/']);
   expect(executeCommand('ls', session).lines.join('\n')).toContain('README.txt');
   expect(executeCommand('cat README.txt', session).lines.join('\n')).toContain('simulated');
-  expect(executeCommand('boot win11', session).navigate).toBe('https://sean-windows-11-web.vercel.app/');
+  expect(executeCommand('boot win11', session).navigate).toBe('https://yuxiaoli.github.io/Windows-11-Web/');
   executeCommand('cd ./systems/../systems', session);
   expect(executeCommand('pwd', session).lines).toEqual(['/systems']);
   expect(executeCommand('cd win11', session).lines.join('\n')).toContain('Not a directory');
