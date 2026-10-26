@@ -13,20 +13,22 @@ export const helpLines = [
   '  cat <path>       Read a virtual text file',
   '  echo <text>      Print literal text',
   '  boot <system>    Open a system in this tab',
-  '    --embed        Try its computer screen instead',
-  '  load <URL|$name> Try a page in the computer screen',
+  '  open <URL|$name> Open a webpage in this tab',
+  '    --embed        Use the computer screen instead',
   '  set name=<URL>   Save a session-only URL',
   '  time             Local time and browser time zone',
   '  source [system]  Show sources or open one',
-  '  help / clear     Guide / clear the display',
+  '  clear / cls      Clear the display',
+  '  help             Show this guide',
   '',
   'Try: ls | cd .. | cat README.txt | boot win11',
   `Systems: ${destinations.map((os) => os.id).join(', ')}`,
-  'set home=https://example.com then load $home',
+  'set home=https://example.com then open $home',
   'Variable names: lowercase a-z, digits, underscore;',
   'start with a letter. Names are case-sensitive.',
-  'Up/Down: history | Tab: complete | Ctrl+C: cancel',
-  'Empty-prompt Tab or Shift+Tab leaves the terminal.',
+  'Up/Down: history | Ctrl+C: cancel',
+  'Tab: cycle matches | Shift+Tab: reverse',
+  'Empty or unmatched Tab leaves the terminal.',
 ];
 
 const readme = [
@@ -36,7 +38,9 @@ const readme = [
   `/systems contains the ${destinations.length} launchable systems.`,
   'boot <id> opens that system in this tab.',
   'boot <id> --embed tries its computer screen.',
-  'load <URL> tries a restricted embedded page.',
+  'open <URL> opens a webpage in this tab.',
+  'open <URL> --embed tries a restricted screen.',
+  'clear and cls clear the display.',
   'Some pages require a direct tab. Nothing is proxied.',
   'Session state disappears when this page reloads.',
 ];
@@ -58,12 +62,31 @@ export function resolveVirtualPath(path: string, cwd: string): string | undefine
   return `/${normalized.join('/')}`;
 }
 
+/** Complete only entries in the same virtual filesystem used by ls/cd/cat. */
+export function virtualPathCompletions(prefix: string, cwd: string, directoriesOnly = false): string[] {
+  if (prefix.length > 256) return [];
+  const slash = prefix.lastIndexOf('/');
+  const directory = prefix.slice(0, slash + 1);
+  const name = prefix.slice(slash + 1);
+  const parent = resolveVirtualPath(directory || '.', cwd);
+  if (!parent || nodes.get(parent)?.kind !== 'directory') return [];
+  const candidates: string[] = [];
+  if (name.startsWith('.')) candidates.push('./', '../');
+  else if (directoriesOnly && !name && parent !== '/') candidates.push('../');
+  for (const [path, node] of nodes) {
+    if (path === '/' || (path.slice(0, path.lastIndexOf('/')) || '/') !== parent) continue;
+    if (directoriesOnly && node.kind !== 'directory') continue;
+    candidates.push(`${path.slice(path.lastIndexOf('/') + 1)}${node.kind === 'directory' ? '/' : ''}`);
+  }
+  return candidates.filter((value) => value.startsWith(name)).map((value) => directory + value);
+}
+
 /** No browser storage, host environment, evaluation or external filesystem. */
 export class TerminalSession {
   cwd = '/systems';
   readonly variables = new Map<string, string>();
   constructor(readonly siteUrl = 'https://yuxiaoli.github.io/boot-loader/') {}
-  get prompt() { return `${this.cwd}> `; }
+  get prompt() { return `${this.cwd === '/' ? '/' : this.cwd.slice(1)} $ `; }
 }
 
 export function executeCommand(input: string, session = new TerminalSession()): CommandResult {
@@ -74,7 +97,7 @@ export function executeCommand(input: string, session = new TerminalSession()): 
   const argument = parsed[2]?.trim() ?? '';
   const args = argument ? argument.split(/\s+/) : [];
   if (command === 'help') return { lines: args.length ? ['Usage: help'] : helpLines };
-  if (command === 'clear') return args.length ? { lines: ['Usage: clear'] } : { lines: [], clear: true };
+  if (command === 'clear' || command === 'cls') return args.length ? { lines: ['Usage: clear'] } : { lines: [], clear: true };
   if (command === 'pwd' || command === 'cwd') return { lines: args.length ? [`Usage: ${command}`] : [session.cwd] };
   if (command === 'echo') return { lines: [argument] };
   if (command === 'time') {
@@ -91,19 +114,27 @@ export function executeCommand(input: string, session = new TerminalSession()): 
     session.variables.set(name, validated.url);
     return { lines: [`Saved $${name} for this session.`] };
   }
-  if (command === 'load') {
-    if (!argument) return { lines: ['Usage: load <URL|$name>'] };
-    let value = argument;
-    if (argument.startsWith('$')) {
-      const reference = /^\$([a-z][a-z0-9_]{0,31})$/.exec(argument);
-      if (!reference) return { lines: ['Use one explicit variable reference, for example load $home.'] };
+  if (command === 'open' || command === 'load') {
+    const usage = ['Usage: open <URL|$name> [--embed]'];
+    const embed = args.includes('--embed');
+    const unknownOption = args.find((arg) => arg.startsWith('-') && arg !== '--embed');
+    if (unknownOption) return { lines: [`Unknown open option: ${unknownOption}`, ...usage] };
+    const values = args.filter((arg) => arg !== '--embed');
+    if (values.length !== 1 || args.length !== (embed ? 2 : 1)) return { lines: usage };
+    let value = values[0];
+    if (value.startsWith('$')) {
+      const reference = /^\$([a-z][a-z0-9_]{0,31})$/.exec(value);
+      if (!reference) return { lines: ['Use one explicit variable reference, for example open $home.'] };
       const stored = session.variables.get(reference[1]);
       if (!stored) return { lines: [`Undefined variable: $${reference[1]}`] };
       value = stored;
     }
     const validated = validateLoadUrl(value, session.siteUrl);
     if ('error' in validated) return { lines: [validated.error] };
-    return { lines: ['Opening the computer screen. Some pages require a direct tab.'], screen: { url: validated.url, label: new URL(validated.url).hostname, kind: 'custom' } };
+    const label = new URL(validated.url).hostname;
+    return embed
+      ? { lines: ['Opening the computer screen. Some pages require a direct tab.'], screen: { url: validated.url, label, kind: 'custom' } }
+      : { lines: [`Opening ${label}...`], navigate: validated.url };
   }
   if (command === 'ls' || command === 'cd' || command === 'cat') {
     if (args.length > 1 || (command === 'cat' && !argument)) return { lines: [`Usage: ${command} ${command === 'cat' ? '<path>' : '[path]'}`] };

@@ -2,7 +2,7 @@ import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
 import { executeCommand, TerminalSession } from './commands';
-import { CommandHistory, complete, inputWindow, sanitizeInput } from './editor';
+import { CommandHistory, CompletionCycle, inputWindow, sanitizeInput } from './editor';
 import { terminalTheme } from './terminal-appearance';
 import { openComputer } from './screen-session';
 import { destinations } from './destinations';
@@ -13,10 +13,10 @@ export function mountTerminal(host: HTMLElement): () => void {
     theme: terminalTheme,
     fontFamily: '"Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace',
     fontSize: window.innerWidth < 640 ? 13 : 15,
-    lineHeight: 1.5,
+    lineHeight: 1.25,
     cursorBlink: !reducedMotion,
-    cursorStyle: 'block',
-    cursorInactiveStyle: 'outline',
+    cursorStyle: 'underline',
+    cursorInactiveStyle: 'underline',
     screenReaderMode: true,
     convertEol: true,
     scrollback: 400,
@@ -25,21 +25,23 @@ export function mountTerminal(host: HTMLElement): () => void {
   const fit = new FitAddon();
   term.loadAddon(fit);
   term.open(host);
-  host.querySelector('textarea')?.setAttribute('aria-label', 'Boot Loader command input');
+  const input = host.querySelector<HTMLTextAreaElement>('textarea')!;
+  input.setAttribute('aria-label', 'Boot Loader command input');
   fit.fit();
   let line = '';
   let cursor = 0;
   const history = new CommandHistory();
+  const completion = new CompletionCycle();
   const session = new TerminalSession(new URL(import.meta.env.BASE_URL, location.origin).href);
   const maxLength = () => 2200;
-  const completeLine = () => complete(line, [...session.variables.keys()]);
+  const completionContext = () => ({ cwd: session.cwd, variableNames: [...session.variables.keys()] });
   const writePrompt = () => term.write(session.prompt);
   const redraw = () => {
     const view = inputWindow(line, cursor, Math.max(1, term.cols - session.prompt.length - 1));
     term.write(`\r\x1b[2K${session.prompt}${view.text}`);
     if (view.text.length > view.cursor) term.write(`\x1b[${view.text.length - view.cursor}D`);
   };
-  const reset = () => { line = ''; cursor = 0; };
+  const reset = () => { line = ''; cursor = 0; completion.reset(); };
   const submit = () => {
     term.write('\r\n');
     history.add(line.trim());
@@ -59,11 +61,24 @@ export function mountTerminal(host: HTMLElement): () => void {
   term.writeln('');
   writePrompt();
   term.attachCustomKeyEventHandler((event) => {
-    // Empty-prompt Tab and Shift+Tab retain normal browser focus navigation.
-    if (event.key === 'Tab' && (event.shiftKey || !line || completeLine().length === 0)) return false;
+    // Only a focused console with matches captures Tab, in either direction.
+    if (event.key === 'Tab') {
+      const capture = document.activeElement === input && completion.canComplete(line, cursor, completionContext());
+      // xterm's screen-reader mode leaves Shift+Tab's native focus action enabled.
+      if (capture) event.preventDefault();
+      return capture;
+    }
     return true;
   });
   term.onData((data) => {
+    if (data === '\t' || data === '\x1b[Z') {
+      const edit = completion.next(line, cursor, completionContext(), data === '\t' ? 1 : -1);
+      if (edit && edit.line.length <= maxLength()) { line = edit.line; cursor = edit.cursor; redraw(); }
+      else completion.reset();
+      return;
+    }
+    // Edits, caret movement, history and command submission start a new cycle.
+    completion.reset();
     if (data === '\r') { submit(); return; }
     if (data === '\x03') { term.write('^C\r\n'); reset(); writePrompt(); return; }
     if (data === '\x0c') { term.write('\x1b[2J\x1b[3J\x1b[H'); redraw(); return; }
@@ -75,12 +90,6 @@ export function mountTerminal(host: HTMLElement): () => void {
     if (data === '\x7f' || data === '\b') { if (cursor > 0) { line = line.slice(0, cursor - 1) + line.slice(cursor); cursor--; redraw(); } return; }
     if (data === '\x1b[3~') { line = line.slice(0, cursor) + line.slice(cursor + 1); redraw(); return; }
     if (data === '\x15') { reset(); redraw(); return; }
-    if (data === '\t') {
-      const matches = completeLine();
-      if (matches.length === 1) { line = matches[0].slice(0, maxLength()); cursor = line.length; }
-      else if (matches.length > 1) { term.write('\r\n'); term.writeln(matches.join('  ')); }
-      redraw(); return;
-    }
     if (data.startsWith('\x1b') && !data.includes('\r') && !data.includes('\n')) return;
     const text = sanitizeInput(data).slice(0, maxLength() - line.length);
     if (text) { line = line.slice(0, cursor) + text + line.slice(cursor); cursor += text.length; redraw(); }

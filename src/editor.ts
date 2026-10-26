@@ -1,19 +1,55 @@
-import { destinations } from './destinations';
+import { destinations, findDestination } from './destinations';
+import { virtualPathCompletions } from './commands';
 
-const commands = ['help', 'ls', 'pwd', 'cwd', 'cd', 'cat', 'echo', 'boot', 'load', 'set', 'time', 'source', 'clear'];
-export function complete(line: string, variableNames: string[] = []): string[] {
-  if (!line) return [];
-  const lower = line.toLowerCase();
-  let candidates = commands;
-  if (lower.startsWith('boot ')) {
-    const parts = lower.split(' ');
-    if (parts[1] === '--embed' && parts.length > 2) candidates = destinations.map((os) => `boot --embed ${os.id}`);
-    else if (destinations.some((os) => os.id === parts[1]) && parts.length > 2) candidates = [`boot ${parts[1]} --embed`];
-    else candidates = [...destinations.map((os) => `boot ${os.id}`), 'boot --embed'];
-  } else if (lower.startsWith('source ')) candidates = destinations.map((os) => `source ${os.id}`);
-  else if (lower.startsWith('load $')) candidates = variableNames.map((name) => `load $${name}`);
-  else if (/^(cd|cat|ls)\s/.test(lower)) candidates = ['/systems', '/README.txt', '/help.txt'].map((path) => `${lower.split(/\s/)[0]} ${path}`);
-  return candidates.filter((value) => value.startsWith(lower));
+const commands = ['boot', 'cat', 'cd', 'clear', 'cls', 'cwd', 'echo', 'help', 'ls', 'open', 'pwd', 'set', 'source', 'time'];
+export function complete(line: string, variableNames: string[] = [], cwd = '/systems'): string[] {
+  if (!line.trim()) return [];
+  const start = line.search(/\S*$/);
+  const head = line.slice(0, start);
+  const token = line.slice(start);
+  const previous = head.trim().split(/\s+/).filter(Boolean);
+  if (!previous.length) return commands.filter((value) => value.startsWith(token.toLowerCase())).map((value) => head + value);
+  const command = previous[0].toLowerCase();
+  const args = previous.slice(1);
+  let candidates: string[] = [];
+  if (command === 'boot' || command === 'open' || command === 'load') {
+    if (args.some((value) => value.startsWith('-') && value !== '--embed') || args.filter((value) => value === '--embed').length > 1) return [];
+    const values = args.filter((value) => value !== '--embed');
+    if (values.length > 1 || (command === 'boot' && values.length === 1 && !findDestination(values[0]))) return [];
+    if (!values.length) candidates = command === 'boot' ? destinations.map((os) => os.id) : variableNames.map((name) => `$${name}`);
+    if (!args.includes('--embed')) candidates.push('--embed');
+  } else if (command === 'source' && !args.length) candidates = destinations.map((os) => os.id);
+  else if (['cd', 'cat', 'ls'].includes(command) && !args.length) return virtualPathCompletions(token, cwd, command === 'cd').map((value) => head + value);
+  return candidates.filter((value) => value.startsWith(value.startsWith('$') ? token : token.toLowerCase())).map((value) => head + value);
+}
+
+type CompletionEdit = { line: string; cursor: number };
+type CompletionContext = { cwd?: string; variableNames?: string[] };
+
+/** A cycle belongs to the original prefix until input, caret or context changes. */
+export class CompletionCycle {
+  private active?: { key: string; edits: CompletionEdit[]; index: number; result: CompletionEdit };
+  reset(): void { this.active = undefined; }
+  private key(context: CompletionContext): string { return JSON.stringify([context.cwd ?? '/systems', context.variableNames ?? []]); }
+  private current(line: string, cursor: number, context: CompletionContext): boolean {
+    return !!this.active && this.active.key === this.key(context) && this.active.result.line === line && this.active.result.cursor === cursor;
+  }
+  canComplete(line: string, cursor: number, context: CompletionContext): boolean {
+    return this.current(line, cursor, context) || complete(line.slice(0, cursor), context.variableNames, context.cwd).length > 0;
+  }
+  next(line: string, cursor: number, context: CompletionContext, direction: -1 | 1 = 1): CompletionEdit | undefined {
+    if (this.current(line, cursor, context)) {
+      const active = this.active!;
+      active.index = (active.index + direction + active.edits.length) % active.edits.length;
+      active.result = active.edits[active.index];
+      return { ...active.result };
+    }
+    const edits = complete(line.slice(0, cursor), context.variableNames, context.cwd).map((value) => ({ line: value + line.slice(cursor), cursor: value.length }));
+    if (!edits.length) { this.reset(); return; }
+    const index = direction === 1 ? 0 : edits.length - 1;
+    this.active = { key: this.key(context), edits, index, result: edits[index] };
+    return { ...edits[index] };
+  }
 }
 
 /** Only printable ASCII is accepted; pasted lines can never execute commands. */

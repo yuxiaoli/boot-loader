@@ -4,6 +4,22 @@ import { CommandHistory, complete, sanitizeInput } from '../src/editor';
 import { destinations, findDestination } from '../src/destinations';
 import { renderPage } from '../src/render';
 
+test('cls is an exact clear alias, including invalid arguments', () => {
+  expect(executeCommand('cls')).toEqual(executeCommand('clear'));
+  expect(executeCommand('CLS extra')).toEqual(executeCommand('clear extra'));
+});
+
+test('the friendly prompt omits the initial leading slash without changing the virtual cwd', () => {
+  const session = new TerminalSession();
+  expect(session.prompt).toBe('systems $ ');
+  expect(executeCommand('pwd', session).lines).toEqual(['/systems']);
+  executeCommand('cd /', session);
+  expect(session.prompt).toBe('/ $ ');
+  expect(executeCommand('pwd', session).lines).toEqual(['/']);
+  executeCommand('cd systems', session);
+  expect(session.prompt).toBe('systems $ ');
+});
+
 test('boot requires an explicit ID and resolves all seven systems independently of selection', () => {
   expect(executeCommand('boot macos').navigate).toBe('https://yuxiaoli.github.io/macos/');
   expect(executeCommand('boot win12').navigate).toBe('https://win12-online.github.io/win12/boot.html');
