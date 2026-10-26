@@ -3,3 +3,10 @@
 
 /* Keep xterm's native 14px drag area; paint only a quiet 6px thumb. */
 #terminal-host .xterm-scrollable-element > .scrollbar.vertical > .slider{box-sizing:border-box;padding-inline:4px;background-clip:content-box;border-radius:7px}
+
+/* xterm 6 scrolls through .xterm-scrollable-element. Its legacy viewport
+   must not paint a second native scrollbar (including platform arrow buttons).
+   Keep the element for xterm's renderer/overview ruler and leave the real
+   scrollbar, wheel handling, track and draggable thumb untouched. */
+#terminal-host .xterm-viewport{overflow-y:hidden;scrollbar-width:none}
+#terminal-host .xterm-viewport::-webkit-scrollbar{display:none;width:0;height:0}
