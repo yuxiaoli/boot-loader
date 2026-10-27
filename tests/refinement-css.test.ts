@@ -12,9 +12,10 @@ test('only the legacy terminal viewport suppresses native scrollbar controls', (
   expect(terminal).not.toMatch(/\.xterm-scrollable-element[^{}]*\{[^}]*(?:display:\s*none|pointer-events:\s*none)/);
 });
 
-test('normal selector focus marks the indicator while contrast modes retain the name cue', () => {
+test('normal selector keeps the dot unadorned while contrast modes retain the name cue', () => {
   expect(visual).toContain('.system-choice:focus-visible{outline:none}');
-  expect(visual).toContain('.system-choice:focus-visible .selection-marker{outline:2px solid var(--accent-ink);outline-offset:2px}');
+  expect(visual).not.toMatch(/^\.system-choice:focus-visible \.selection-marker\{/m);
+  expect(visual).toContain('.status-dot,.is-selected .selection-marker{background:var(--accent)}');
   expect(visual).not.toMatch(/^\.system-choice:focus-visible \.system-name\{/m);
   expect(visual).toContain('@media(prefers-contrast:more),(forced-colors:active){.system-choice:focus-visible .selection-marker{outline:none}.system-choice:focus-visible .system-name{text-decoration-line:underline;text-decoration-thickness:2px;text-underline-offset:.22em}}');
   expect(visual).toContain('@media(forced-colors:active){.system-choice:focus-visible .system-name{text-decoration-color:CanvasText}}');
