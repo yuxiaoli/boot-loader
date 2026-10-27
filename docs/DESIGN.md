@@ -26,3 +26,9 @@ Scope recorded before implementation: append Ubuntu as destination `ubuntu` (07)
 - Reuse ordinary current-tab links, `boot ubuntu`, `source ubuntu`, completion, `/systems` and the existing screen controller for `boot ubuntu --embed`. Keep its sandbox, cleanup and explicit direct fallback.
 - Add a failing regression first, then check the full seven-entry inventory, commands, markup and all three production routes. Independently inspect the personalized desktop, an in-frame app interaction, Exit/Back and mobile host layout, including screenshots; distinguish viewport emulation from physical devices.
 - Validate and publish the exact tested commit through `develop` without force pushes. Preserve `main`, draft PR1 and environment protections. Compare the live version and every public asset with the successful CI artifact, then verify live launches. Report external-app and platform limits honestly.
+
+## Owned Win12 welcome routing
+
+2026-10-27 scope recorded before implementation: replace only Win12's shared live destination with `https://yuxiaoli.github.io/win12/boot.html`. The owned fork has deployed the exact approved welcome at source `5d5f58dedb7d6536164354ecb0f707c9d48d55cd`; the previous upstream address cannot receive that customization. The registry supplies static links, visual screen selection, terminal direct/embed launches and the virtual system file. Preserve the fork source link, the other six destinations, completion, launch modes and sandbox policy. WebVM remains an external direct-only destination.
+
+Update the existing destination regression expectations, check all three production routes and verify the owned boot/desktop responses and served welcome through noninteractive requests. Follow feature branch → draft PR → review/checks → normal merge to `develop` → existing Pages deployment. No user browser interaction, protected source-branch writes or history rewriting is part of this routing change.
