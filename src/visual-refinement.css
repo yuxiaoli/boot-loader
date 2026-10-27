@@ -8,8 +8,9 @@ html[data-page=visual]{background:var(--paper)}html[data-page=terminal],html.ter
 @media(max-width:374px){.hero h1{font-size:38px}.system-choice{gap:9px}.site-header nav{gap:10px}.system-name{font-size:18px}}
 @media(prefers-contrast:more){:root{--accent:#1e6ef4;--muted:#45454c;--line:#8b8b93}.system-row.is-selected{outline:1px solid var(--accent-text);outline-offset:-1px}}
 
-/* Keep keyboard focus inside the selector label instead of an outer blue box.
-   Other links and launch controls retain their standard focus outlines. */
+/* Keep normal keyboard focus on the existing marker, with no name underline.
+   Contrast modes retain the stronger label cue; other controls keep outlines. */
 .system-choice:focus-visible{outline:none}
-.system-choice:focus-visible .system-name{text-decoration-line:underline;text-decoration-thickness:2px;text-underline-offset:.22em}
+.system-choice:focus-visible .selection-marker{outline:2px solid var(--accent-ink);outline-offset:2px}
+@media(prefers-contrast:more),(forced-colors:active){.system-choice:focus-visible .selection-marker{outline:none}.system-choice:focus-visible .system-name{text-decoration-line:underline;text-decoration-thickness:2px;text-underline-offset:.22em}}
 @media(forced-colors:active){.system-choice:focus-visible .system-name{text-decoration-color:CanvasText}}
