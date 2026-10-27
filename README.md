@@ -65,14 +65,14 @@ The compact underline cursor uses native xterm blinking while focused, with curs
 
 Each visual entry offers an explicit screen launch and an ordinary same-tab Open link. Source links remain secondary. A screen session loads no iframe or target assets before a user launches it; switching or exiting removes its frame. Browser Back closes the session. The screen can be exited without entering the embedded page.
 
-Some pages refuse embedding or need capabilities available only in a direct tab. A frame load event does not establish that its app works; the interface keeps a direct-open action and bounded status messages, and never navigates automatically after a timeout. WebVM requires cross-origin isolation and is offered as a direct launch on this Pages host. Win12 starts at its upstream boot page, `https://win12-online.github.io/win12/boot.html`. See [compatibility and verification](docs/VERIFICATION.md).
+Some pages refuse embedding or need capabilities available only in a direct tab. A frame load event does not establish that its app works; the interface keeps a direct-open action and bounded status messages, and never navigates automatically after a timeout. WebVM requires cross-origin isolation and is offered as a direct launch on this Pages host. Win12 starts at the owned fork's boot page, `https://yuxiaoli.github.io/win12/boot.html`, where the approved welcome is deployed. See [compatibility and verification](docs/VERIFICATION.md).
 
 Edit `src/destinations.ts` to update destinations. See [design decisions](docs/DESIGN.md) for architecture and accessibility details.
 
 ## Release
 
-1. Implement and run `npm run check` on `develop`.
+1. Create a feature branch from current `develop`, implement and run `npm run check`.
 2. Verify the built routes, keyboard interaction and mobile layout.
-3. Confirm the remote `develop` head, then push the tested commit to `develop`. Never force a changed remote head.
+3. Open a draft PR against `develop`, review the diff and checks, then merge normally when requirements pass. Never force a changed remote head.
 4. GitHub Actions validates that exact commit and deploys its `dist` artifact to Pages. The `github-pages` environment must permit `develop`; preserve existing protection rules and report any restriction instead of bypassing it.
 5. Verify `https://yuxiaoli.github.io/boot-loader/version.json` matches the deployed `develop` SHA, then verify live routes/assets and interactions.

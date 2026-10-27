@@ -22,7 +22,7 @@ test('the friendly prompt omits the initial leading slash without changing the v
 
 test('boot requires an explicit ID and resolves all seven systems independently of selection', () => {
   expect(executeCommand('boot macos').navigate).toBe('https://yuxiaoli.github.io/macos/');
-  expect(executeCommand('boot win12').navigate).toBe('https://win12-online.github.io/win12/boot.html');
+  expect(executeCommand('boot win12').navigate).toBe('https://yuxiaoli.github.io/win12/boot.html');
   expect(executeCommand('boot winxp').navigate).toBe('https://yuxiaoli.github.io/winXP/');
   expect(executeCommand('boot daedalos').navigate).toBe('https://yuxiaoli.github.io/daedalOS/');
   expect(executeCommand('boot WIN11').navigate).toBe('https://yuxiaoli.github.io/Windows-11-Web/');
@@ -36,7 +36,7 @@ test('Ubuntu is the seventh shared destination with both launch modes and the or
   expect(destinations.map(({id,live,source}) => ({id,live,source}))).toEqual([
     {id:'daedalos',live:'https://yuxiaoli.github.io/daedalOS/',source:'https://github.com/yuxiaoli/daedalOS'},
     {id:'macos',live:'https://yuxiaoli.github.io/macos/',source:'https://github.com/yuxiaoli/macos'},
-    {id:'win12',live:'https://win12-online.github.io/win12/boot.html',source:'https://github.com/yuxiaoli/win12'},
+    {id:'win12',live:'https://yuxiaoli.github.io/win12/boot.html',source:'https://github.com/yuxiaoli/win12'},
     {id:'winxp',live:'https://yuxiaoli.github.io/winXP/',source:'https://github.com/yuxiaoli/winXP'},
     {id:'win11',live:'https://yuxiaoli.github.io/Windows-11-Web/',source:'https://github.com/yuxiaoli/Windows-11-Web/tree/develop'},
     {id:'webvm',live:'https://webvm.io/',source:'https://github.com/leaningtech/webvm'},
@@ -90,14 +90,15 @@ test('Win11 preserves its Pages repository base path and fork source throughout 
   }
 });
 
-test('Win12 uses the actual boot page across visual links, screen selection and the virtual shell', () => {
-  const bootUrl = 'https://win12-online.github.io/win12/boot.html';
+test('Win12 uses the owned fork boot page across visual links, screen selection and the virtual shell', () => {
+  const bootUrl = 'https://yuxiaoli.github.io/win12/boot.html';
   expect(findDestination('win12')?.live).toBe(bootUrl);
   expect(executeCommand('cat /systems/win12').lines).toContain(bootUrl);
   expect(executeCommand('source win12').navigate).toBe('https://github.com/yuxiaoli/win12');
   for (const page of ['home', 'visual', 'terminal'] as const) {
     const html = renderPage(page);
     expect(html).toContain(`href="${bootUrl}"`);
+    expect(html).not.toContain('href="https://win12-online.github.io/win12/boot.html"');
     expect(html).not.toContain('href="https://yuxiaoli.github.io/win12/"');
     if (page !== 'terminal') expect(html).toContain('data-embed="win12"');
   }
@@ -107,7 +108,7 @@ test('boot can explicitly use the computer screen while retaining mandatory IDs 
   const session = new TerminalSession();
   executeCommand('cd /', session);
   const embedded = executeCommand('boot win12 --embed', session);
-  expect(embedded.screen).toEqual({ url: 'https://win12-online.github.io/win12/boot.html', label: 'Win12', kind: 'registry', directOnly: undefined });
+  expect(embedded.screen).toEqual({ url: 'https://yuxiaoli.github.io/win12/boot.html', label: 'Win12', kind: 'registry', directOnly: undefined });
   expect(embedded.navigate).toBeUndefined();
   expect(executeCommand('boot --embed WIN11', session).screen?.url).toBe('https://yuxiaoli.github.io/Windows-11-Web/');
   expect(executeCommand('boot win11', session).navigate).toBe('https://yuxiaoli.github.io/Windows-11-Web/');
