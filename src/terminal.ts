@@ -5,7 +5,7 @@ import { executeCommand, TerminalSession } from './commands';
 import { CommandHistory, CompletionCycle, inputWindow, sanitizeInput } from './editor';
 import { terminalTheme } from './terminal-appearance';
 import { openComputer } from './screen-session';
-import { destinations } from './destinations';
+import { version } from '../package.json';
 
 export function mountTerminal(host: HTMLElement): () => void {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -53,11 +53,8 @@ export function mountTerminal(host: HTMLElement): () => void {
     if (result.navigate) window.location.assign(result.navigate);
     if (result.screen) openComputer(result.screen, host.querySelector('textarea') ?? undefined);
   };
-  term.writeln('BOOT LOADER [1.0]');
-  term.writeln(`${destinations.length} systems. A simulated shell.`);
-  term.writeln('');
-  term.writeln('Type help for commands.');
-  term.writeln('Try: ls | boot win11');
+  term.writeln(`Boot Loader [Version ${version}]`);
+  term.writeln('Copyright (c) Vector Index. All rights reserved.');
   term.writeln('');
   writePrompt();
   term.attachCustomKeyEventHandler((event) => {
