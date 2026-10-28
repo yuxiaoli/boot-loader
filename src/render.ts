@@ -64,11 +64,11 @@ function terminal(standalone: boolean): string {
       <details class="command-reference"><summary>Commands &amp; desktop links</summary><p><code>help</code> · <code>ls</code> · <code>pwd</code> · <code>cd &lt;path&gt;</code> · <code>cat &lt;path&gt;</code> · <code>time</code> · <code>boot &lt;system&gt; [--embed]</code> · <code>source [system]</code> · <code>clear</code> / <code>cls</code> · <code>open &lt;URL|$name&gt; [--embed]</code> · <code>set home=https://example.com</code></p>
         <ul>${destinations.map((os) => `<li><span><code>${os.id}</code> / ${os.name}</span><a href="${os.live}">Boot ${os.name} ↗</a><a href="${os.source}">${os.name} source ↗</a></li>`).join('')}</ul>
       </details>
-      <div class="terminal-footer"><span>Boot Loader <span aria-hidden="true">/</span> Built for the browser.</span><a href="${repositoryUrl}">View source ↗</a></div>
+      <div class="terminal-footer"><span>Boot Loader <span aria-hidden="true">/</span> Built for the browser.</span><span class="footer-credit">Built by <a href="https://www.linkedin.com/in/yuxiaoli/">Sean</a> with ❤️</span><a href="${repositoryUrl}">View source ↗</a></div>
     </div>
   </section>`;
 }
 
 export function renderPage(page: Page): string {
-  return `${header(page)}<main id="main">${page === 'terminal' ? terminal(true) : visual() + (page === 'home' ? terminal(false) : '')}</main>${page === 'visual' ? `<footer class="visual-footer wrap"><span>Boot Loader / Built for the browser.</span><a href="${repositoryUrl}">View source ↗</a></footer>` : ''}${screenDialog()}`;
+  return `${header(page)}<main id="main">${page === 'terminal' ? terminal(true) : visual() + (page === 'home' ? terminal(false) : '')}</main>${page === 'visual' ? `<footer class="visual-footer wrap"><span>Boot Loader / Built for the browser.</span><span class="footer-credit">Built by <a href="https://www.linkedin.com/in/yuxiaoli/">Sean</a> with ❤️</span><a href="${repositoryUrl}">View source ↗</a></footer>` : ''}${screenDialog()}`;
 }
