@@ -67,6 +67,7 @@ export class CommandHistory {
   private entries: string[] = [];
   private index = 0;
   private draft = '';
+  resetNavigation(): void { this.index = this.entries.length; this.draft = ''; }
   add(line: string) {
     if (line && this.entries.at(-1) !== line) this.entries.push(line);
     if (this.entries.length > 100) this.entries.shift();
