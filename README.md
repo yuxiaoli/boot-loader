@@ -28,7 +28,7 @@ The build creates a real `index.html` for each route, including accessible links
 
 ## Commands
 
-Start in `/systems`. The prompt displays `systems $`; `pwd` and `cwd` still report the absolute virtual path. At root the prompt displays `/ $`. `ls` lists `daedalos`, `macos`, `win12`, `winxp`, `win11`, `webvm` and `ubuntu`.
+Start in `/systems`. The prompt displays `systems> ` (with a trailing space); `pwd` and `cwd` still report the absolute virtual path. At root the prompt displays `/> `. `ls` lists `daedalos`, `macos`, `win12`, `winxp`, `win11`, `webvm` and `ubuntu`.
 
 ```text
 help
@@ -57,9 +57,11 @@ cls
 
 `open` accepts explicit HTTP/HTTPS URLs and rejects embedded credentials, unsafe schemes and Boot Loader's own pages. `set name=<URL>` stores up to 16 URL values in this page's memory. Names use lowercase letters, digits and underscores, start with a letter and are at most 32 characters; references such as `$home` are case-sensitive and expand exactly once. URL values are at most 2048 characters. State and command history are never saved to browser storage or a server. Reloading resets the simulated session. `time` reads a new local browser Date and actual Intl time zone each time.
 
-Arrow keys edit and recall history; Ctrl+C cancels; Ctrl+L clears; Home/End move the cursor. While the terminal is focused, Tab completes from the typed prefix and cycles through its matches; Shift+Tab cycles in reverse. For example, `l` then Tab becomes `ls`, while `boot w` cycles through matching system IDs. Completion also understands virtual paths relative to the current directory, available session variable names and `--embed`. It preserves text after the caret, never submits a command, and resets its cycle after editing, moving the caret, using history or pressing Enter. Empty or unmatched Tab/Shift+Tab follows normal browser focus navigation. Outside the terminal, Tab keeps its normal behavior.
+Arrow keys edit and recall history; Esc clears only the unsubmitted input and keeps output/history; Ctrl+C cancels; Ctrl+L clears; Home/End move the cursor. While the terminal is focused, Tab completes from the typed prefix and cycles through its matches; Shift+Tab cycles in reverse. For example, `l` then Tab becomes `ls`, while `boot w` cycles through matching system IDs. Completion also understands virtual paths relative to the current directory, available session variable names and `--embed`. It preserves text after the caret, never submits a command, and resets its cycle after editing, moving the caret, using history or pressing Enter. Empty or unmatched Tab/Shift+Tab follows normal browser focus navigation. Outside the terminal, Tab keeps its normal behavior.
 
-The compact underline cursor uses native xterm blinking while focused, with cursor-only 50% alpha. It remains steady on blur and when reduced motion is requested. Text stays fully bright `#11FF00` on black, with a neutral gray scrollbar and tighter 1.25 line spacing. Long input scrolls horizontally within the prompt without losing URL characters during a resize. No real shell, filesystem, OS environment or process is used.
+The rectangular block cursor uses native xterm blinking while focused, with cursor-only 50% alpha. It uses an outline on blur and remains steady when reduced motion is requested, including preference changes during the session. Text stays fully bright `#11FF00` on black, with a neutral gray scrollbar and tighter 1.25 line spacing. Long input scrolls horizontally within the prompt without losing URL characters during a resize. No real shell, filesystem, OS environment or process is used.
+
+Labeled native selectors offer 12–24px font sizes and named Classic green, Amber, and Soft white presets; there is no color picker. Add future presets to `terminalThemes` in `src/terminal-appearance.ts`. Choices are session-only. The standalone terminal measures its available viewport space below the header and controls once at mount; its pixel height stays fixed through subsequent window/keyboard resizes, while xterm refits rows and columns. The homepage terminal keeps its existing height rules.
 
 ## Launch modes
 
