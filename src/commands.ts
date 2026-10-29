@@ -86,7 +86,7 @@ export class TerminalSession {
   cwd = '/systems';
   readonly variables = new Map<string, string>();
   constructor(readonly siteUrl = 'https://yuxiaoli.github.io/boot-loader/') {}
-  get prompt() { return `${this.cwd === '/' ? '/' : this.cwd.slice(1)} $ `; }
+  get prompt() { return `${this.cwd === '/' ? '/' : this.cwd.slice(1)}> `; }
 }
 
 export function executeCommand(input: string, session = new TerminalSession()): CommandResult {

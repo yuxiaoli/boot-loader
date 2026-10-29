@@ -1,3 +1,5 @@
+import type { ITheme } from '@xterm/xterm';
+
 /** xterm blends cursor alpha onto its black canvas; text stays fully opaque. */
 export const terminalTheme = {
   background: '#000000',
@@ -10,6 +12,23 @@ export const terminalTheme = {
   scrollbarSliderHoverBackground: '#ffffff66',
   scrollbarSliderActiveBackground: '#ffffff80',
 };
+
+/** Add named presets here; controls and renderer share this registry. */
+export const terminalThemes: Record<string, { label: string; theme: ITheme }> = {
+  green: { label: 'Classic green', theme: terminalTheme },
+  amber: { label: 'Amber', theme: { ...terminalTheme, foreground: '#FFBF00', cursor: '#FFBF0080', selectionBackground: '#FFBF0040' } },
+  white: { label: 'Soft white', theme: { ...terminalTheme, foreground: '#E6E6E6', cursor: '#E6E6E680', selectionBackground: '#E6E6E640' } },
+};
+export const terminalFontSizes = [12, 13, 15, 17, 20, 24];
+
+/** Freeze the standalone host's initial available height; subsequent fits only resize columns/rows. */
+export function initializeTerminalHeight(host: HTMLElement): void {
+  if (!host.closest('.standalone-terminal')) return;
+  const viewport = window.visualViewport;
+  const bottom = (viewport?.offsetTop ?? 0) + (viewport?.height ?? window.innerHeight);
+  const margin = Number.parseFloat(getComputedStyle(host).marginBottom) || 0;
+  host.style.height = `${Math.max(80, Math.floor(bottom - host.getBoundingClientRect().top - margin - 1))}px`;
+}
 
 export function terminalContext(page: string | undefined, focused: boolean, top: number, bottom: number, height: number): boolean {
   return page === 'terminal' || focused || (page === 'home' && top < height * 0.55 && bottom > height * 0.45);

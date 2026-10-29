@@ -3,20 +3,24 @@ import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
 import { executeCommand, TerminalSession } from './commands';
 import { CommandHistory, CompletionCycle, inputWindow, sanitizeInput } from './editor';
-import { terminalTheme } from './terminal-appearance';
+import { terminalTheme, terminalThemes, terminalFontSizes, initializeTerminalHeight } from './terminal-appearance';
 import { openComputer } from './screen-session';
 import { version } from '../package.json';
 
 export function mountTerminal(host: HTMLElement): () => void {
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const loading = document.querySelector<HTMLElement>('#terminal-loading');
+  if (loading) loading.hidden = true;
+  initializeTerminalHeight(host);
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const reducedMotion = motion.matches;
   const term = new Terminal({
     theme: terminalTheme,
     fontFamily: '"Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace',
     fontSize: window.innerWidth < 640 ? 13 : 15,
     lineHeight: 1.25,
     cursorBlink: !reducedMotion,
-    cursorStyle: 'underline',
-    cursorInactiveStyle: 'underline',
+    cursorStyle: 'block',
+    cursorInactiveStyle: 'outline',
     screenReaderMode: true,
     convertEol: true,
     scrollback: 400,
@@ -28,6 +32,9 @@ export function mountTerminal(host: HTMLElement): () => void {
   const input = host.querySelector<HTMLTextAreaElement>('textarea')!;
   input.setAttribute('aria-label', 'Boot Loader command input');
   fit.fit();
+  let composing = false;
+  input.addEventListener('compositionstart', () => { composing = true; });
+  input.addEventListener('compositionend', () => { composing = false; });
   let line = '';
   let cursor = 0;
   const history = new CommandHistory();
@@ -58,6 +65,7 @@ export function mountTerminal(host: HTMLElement): () => void {
   term.writeln('');
   writePrompt();
   term.attachCustomKeyEventHandler((event) => {
+    if (event.isComposing || composing || event.keyCode === 229) return false;
     // Only a focused console with matches captures Tab, in either direction.
     if (event.key === 'Tab') {
       const capture = document.activeElement === input && completion.canComplete(line, cursor, completionContext());
@@ -76,6 +84,8 @@ export function mountTerminal(host: HTMLElement): () => void {
     }
     // Edits, caret movement, history and command submission start a new cycle.
     completion.reset();
+    if (composing && (data === '\r' || data === '\x1b')) return;
+    if (data === '\x1b') { reset(); history.resetNavigation(); redraw(); return; }
     if (data === '\r') { submit(); return; }
     if (data === '\x03') { term.write('^C\r\n'); reset(); writePrompt(); return; }
     if (data === '\x0c') { term.write('\x1b[2J\x1b[3J\x1b[H'); redraw(); return; }
@@ -91,6 +101,25 @@ export function mountTerminal(host: HTMLElement): () => void {
     const text = sanitizeInput(data).slice(0, maxLength() - line.length);
     if (text) { line = line.slice(0, cursor) + text + line.slice(cursor); cursor += text.length; redraw(); }
   });
+  const fontControl = document.querySelector<HTMLSelectElement>('#terminal-font-size');
+  const themeControl = document.querySelector<HTMLSelectElement>('#terminal-theme');
+  if (fontControl) {
+    fontControl.disabled = false;
+    fontControl.value = String(term.options.fontSize);
+    fontControl.addEventListener('change', () => {
+      const size = Number(fontControl.value);
+      if (!terminalFontSizes.includes(size)) return;
+      term.options.fontSize = size;
+      fit.fit(); redraw();
+    });
+  }
+  if (themeControl) themeControl.disabled = false;
+  themeControl?.addEventListener('change', () => {
+    const preset = terminalThemes[themeControl.value];
+    if (preset) term.options.theme = preset.theme;
+  });
+  const updateMotion = () => { term.options.cursorBlink = !motion.matches; };
+  motion.addEventListener('change', updateMotion);
   const observer = new ResizeObserver(() => {
     fit.fit();
     redraw();
@@ -98,7 +127,7 @@ export function mountTerminal(host: HTMLElement): () => void {
   observer.observe(host);
   window.addEventListener('pagehide', (event) => {
     // A cached Back navigation must restore a working console.
-    if (!event.persisted) { observer.disconnect(); term.dispose(); }
+    if (!event.persisted) { observer.disconnect(); motion.removeEventListener('change', updateMotion); term.dispose(); }
   });
   return () => term.focus();
 }
