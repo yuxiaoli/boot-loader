@@ -11,13 +11,13 @@ test('cls is an exact clear alias, including invalid arguments', () => {
 
 test('the friendly prompt omits the initial leading slash without changing the virtual cwd', () => {
   const session = new TerminalSession();
-  expect(session.prompt).toBe('systems $ ');
+  expect(session.prompt).toBe('systems> ');
   expect(executeCommand('pwd', session).lines).toEqual(['/systems']);
   executeCommand('cd /', session);
-  expect(session.prompt).toBe('/ $ ');
+  expect(session.prompt).toBe('/> ');
   expect(executeCommand('pwd', session).lines).toEqual(['/']);
   executeCommand('cd systems', session);
-  expect(session.prompt).toBe('systems $ ');
+  expect(session.prompt).toBe('systems> ');
 });
 
 test('boot requires an explicit ID and resolves all seven systems independently of selection', () => {
