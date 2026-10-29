@@ -6,10 +6,15 @@ import { CommandHistory, CompletionCycle, inputWindow, sanitizeInput } from './e
 import { terminalTheme, terminalThemes, terminalFontSizes, initializeTerminalHeight } from './terminal-appearance';
 import { openComputer } from './screen-session';
 import { version } from '../package.json';
+import { mountCatalogControls, type CatalogLoader } from './terminal-catalog-controls';
 
-export function mountTerminal(host: HTMLElement): () => void {
+// Production callers pass no loader: catalogue activation remains disabled until
+// an approved publishable, pinned source asset is available. No implicit fetch.
+export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader): () => void {
   const loading = document.querySelector<HTMLElement>('#terminal-loading');
   if (loading) loading.hidden = true;
+  const catalogRoot = catalogueLoader ? document.createElement('section') : null;
+  if (catalogRoot) { catalogRoot.className = 'terminal-catalog'; host.before(catalogRoot); }
   initializeTerminalHeight(host);
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const reducedMotion = motion.matches;
@@ -113,10 +118,13 @@ export function mountTerminal(host: HTMLElement): () => void {
       fit.fit(); redraw();
     });
   }
+  const catalogControls = catalogRoot && catalogueLoader ? mountCatalogControls(catalogRoot, catalogueLoader, theme => {
+    term.options.theme = theme ?? terminalThemes[themeControl?.value ?? 'green']?.theme ?? terminalTheme;
+  }) : null;
   if (themeControl) themeControl.disabled = false;
   themeControl?.addEventListener('change', () => {
     const preset = terminalThemes[themeControl.value];
-    if (preset) term.options.theme = preset.theme;
+    if (preset) { term.options.theme = preset.theme; catalogControls?.useBuiltin(); }
   });
   const updateMotion = () => { term.options.cursorBlink = !motion.matches; };
   motion.addEventListener('change', updateMotion);
@@ -127,7 +135,7 @@ export function mountTerminal(host: HTMLElement): () => void {
   observer.observe(host);
   window.addEventListener('pagehide', (event) => {
     // A cached Back navigation must restore a working console.
-    if (!event.persisted) { observer.disconnect(); motion.removeEventListener('change', updateMotion); term.dispose(); }
+    if (!event.persisted) { catalogControls?.dispose(); observer.disconnect(); motion.removeEventListener('change', updateMotion); term.dispose(); }
   });
   return () => term.focus();
 }

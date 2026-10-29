@@ -9,10 +9,10 @@ Task DOT-20261029-025, 2026-10-30 (Asia/Hong_Kong).
 3. Prepare bounded search/pagination and an explicit refresh state machine that
    retains the last valid catalogue after failed/invalid refreshes. No persistent
    command/history storage or background network requests.
-4. After the upstream contract/publication gate is resolved, wire a reviewed,
-   immutable catalogue asset into the existing selector. Add search, result count,
-   source/mode attribution and refresh controls while retaining font, commands,
-   Esc, history and terminal-height behavior. Keep built-in presets as fallback.
+4. Prepare optional search, result count, source/mode attribution and refresh
+   controls against synthetic DOM fixtures, with activation disabled. After the
+   upstream publication gate resolves, provide a reviewed immutable catalogue
+   loader. Retain font, commands, Esc, history and height; keep built-in fallback.
 5. Browser-verify keyboard/mobile/repeated refresh flows, then review a draft PR,
    deploy the exact authorized version and verify live version and behavior.
 

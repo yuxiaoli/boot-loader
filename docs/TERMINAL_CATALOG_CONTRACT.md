@@ -1,7 +1,9 @@
 # Terminal catalogue consumer — preparation only
 
-`src/terminal-catalog.ts` implements a caller-owned, inert adapter. It is not wired
-into the live terminal and performs no fetch or persistence. Existing presets,
+`src/terminal-catalog.ts` implements a caller-owned adapter. The optional catalogue
+controls are wired through an explicit second loader argument to `mountTerminal`;
+production callers supply none, so activation stays disabled. There is no fetch
+or persistence implementation. Existing presets,
 font controls, commands, history, Escape behavior and height remain unchanged.
 
 ## Boundary
@@ -37,7 +39,7 @@ network call, public endpoint or publishing mechanism is added.
 
 ## Verified preparation and remaining gate
 
-The existing 29 tests and 10 adapter tests pass, together with typecheck, build
+The existing 29 tests, 10 adapter tests and 6 DOM interaction tests pass, together with typecheck, build
 and all three route checks. A local-only full-catalogue dry run against the
 verified upstream terminal blob `b86f135567b8417fe464fe999b427567a5c4d3dd`
 accepted all 1,363 rows with zero exclusions (1,048 dark, 300 light, 15 unknown).
@@ -49,6 +51,25 @@ Full integration remains blocked on an approved publishable catalogue contract
 and asset. The upstream repository is private and pending review; a feature
 branch is not an approved release. No unapproved data or credentials may be
 copied into this public site. Resolve upstream publication/redistribution and
-version pinning first, then wire the selector/search/source/mode/refresh UI,
-verify mobile/keyboard/repeated-refresh behavior, deploy and verify the exact
+version pinning first, then supply the approved loader to activate the prepared selector/search/source/
+mode/refresh UI, verify rendered mobile/keyboard behavior, deploy and verify the exact
 live version. This checkpoint is NOT a completed catalogue rollout.
+
+## Optional controls and verification boundary
+
+The native labeled search/select/buttons expose 50 rows per page, full match
+count, exclusions, source status and revision. Attribution is plain text, never
+HTML. Filtering does not change an applied theme; switching built-in presets
+clears catalogue attribution. Successful refresh reapplies the selected ID if
+present, otherwise falls back to the current built-in preset. Failed refresh
+retains selection and displays the failure. Terminal disposal removes listeners
+and prevents pending async work from applying changes. The panel has a bounded,
+scrollable responsive height; terminal height is measured after allocating it.
+
+DOM tests verify pagination, final-record search, palette selection, literal
+untrusted attribution, no-match state, offline last-good retention, explicit
+fallback, removed IDs, native-preset reset, retry and disposal. Real Chromium
+launch was blocked by the execution sandbox (`socket(): Operation not permitted`).
+Rendered screenshots, physical/mobile keyboard, actual xterm palette interaction
+and live deployment remain unverified. No dependency/publication restriction
+was bypassed to obtain those checks.
