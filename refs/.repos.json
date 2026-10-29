@@ -1,0 +1,58 @@
+{
+  "repos": [
+    {
+      "name": "webvm",
+      "gitUrl": "https://github.com/leaningtech/webvm.git",
+      "path": "",
+      "timestamp": "2026-10-29T17:33:00Z"
+    },
+    {
+      "name": "Windows-11-Web",
+      "gitUrl": "https://github.com/yuxiaoli/Windows-11-Web.git",
+      "path": "",
+      "timestamp": "2026-10-29T17:33:00Z"
+    },
+    {
+      "name": "boot-loader",
+      "gitUrl": "https://github.com/yuxiaoli/boot-loader.git",
+      "path": "",
+      "timestamp": "2026-10-29T17:33:00Z"
+    },
+    {
+      "name": "daedalOS",
+      "gitUrl": "https://github.com/yuxiaoli/daedalOS.git",
+      "path": "",
+      "timestamp": "2026-10-29T17:33:00Z"
+    },
+    {
+      "name": "macos",
+      "gitUrl": "https://github.com/yuxiaoli/macos.git",
+      "path": "",
+      "timestamp": "2026-10-29T17:33:00Z"
+    },
+    {
+      "name": "ubuntu-web",
+      "gitUrl": "https://github.com/yuxiaoli/ubuntu-web.git",
+      "path": "",
+      "timestamp": "2026-10-29T17:33:00Z"
+    },
+    {
+      "name": "win12",
+      "gitUrl": "https://github.com/yuxiaoli/win12.git",
+      "path": "",
+      "timestamp": "2026-10-29T17:33:00Z"
+    },
+    {
+      "name": "winXP",
+      "gitUrl": "https://github.com/yuxiaoli/winXP.git",
+      "path": "",
+      "timestamp": "2026-10-29T17:33:00Z"
+    },
+    {
+      "name": "themes-catalog",
+      "gitUrl": "https://github.com/yuxiaoli/themes-catalog.git",
+      "path": "",
+      "timestamp": "2026-10-29T17:33:00Z"
+    }
+  ]
+}
