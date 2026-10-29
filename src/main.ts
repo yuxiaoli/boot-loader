@@ -46,8 +46,11 @@ if (host) {
       if (focus) focusConsole();
     } catch {
       requested = false;
-      const status = document.querySelector('#terminal-loading');
-      if (status) status.textContent = 'Console could not load. Use the desktop links below, or select Focus terminal to retry.';
+      const status = document.querySelector<HTMLElement>('#terminal-loading');
+      if (status) {
+        status.hidden = false;
+        status.textContent = 'Console could not load. Use the desktop links below, or select Focus terminal to retry.';
+      }
     }
   };
   document.querySelector('#focus-terminal')?.addEventListener('click', () => { void loadConsole(true); });
