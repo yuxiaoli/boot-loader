@@ -35,15 +35,20 @@ selectButtons.forEach((button, i) => {
 const host = document.querySelector<HTMLElement>('#terminal-host');
 if (host) {
   let requested = false;
+  let pendingFocus = false;
   let focusConsole: (() => void) | undefined;
   const loadConsole = async (focus = false) => {
-    if (requested) { if (focus) focusConsole?.(); return; }
+    pendingFocus ||= focus;
+    if (requested) {
+      if (pendingFocus && focusConsole) { focusConsole(); pendingFocus = false; }
+      return;
+    }
     requested = true;
     try {
       const { mountTerminal } = await import('./terminal');
       focusConsole = mountTerminal(host);
       document.querySelector('#terminal-loading')?.remove();
-      if (focus) focusConsole();
+      if (pendingFocus) { focusConsole(); pendingFocus = false; }
     } catch {
       requested = false;
       const status = document.querySelector<HTMLElement>('#terminal-loading');
