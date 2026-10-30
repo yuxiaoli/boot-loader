@@ -4,3 +4,6 @@ temp/
 test-results/
 .env*
 !.env.example
+
+refs/*
+!refs/.repos.json
