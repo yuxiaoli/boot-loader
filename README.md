@@ -31,6 +31,8 @@ The build creates a real `index.html` for each route, including accessible links
 Start in `/systems`. The prompt displays `systems> ` (with a trailing space); `pwd` and `cwd` still report the absolute virtual path. At root the prompt displays `/> `. `ls` lists `daedalos`, `macos`, `win12`, `winxp`, `win11`, `webvm` and `ubuntu`.
 
 ```text
+intro
+about
 help
 ls
 pwd
@@ -50,6 +52,8 @@ source webvm
 clear
 cls
 ```
+
+`intro` gives a welcome and practical first steps. `about` introduces the project and Sean using the approved public welcome copy and website. Both commands are read-only and take no arguments; `help` remains the command reference. They are available through Tab completion on both terminal routes.
 
 `cwd` is an alias for `pwd`. Paths are virtual, with root, relative paths, `.` and `..`; `cd` without a path returns to `/systems`. `boot <id>` always requires an explicit system, independently of selection or directory. It opens the current tab by default; `boot <id> --embed` tries the same computer-screen session as the visual selector, including its direct-open fallback. `--embed` is the only boot option; unknown or repeated options show an error or usage. There is no `os list` alias.
 

@@ -5,8 +5,46 @@ export type ScreenRequest = { url: string; label: string; kind: 'registry' | 'cu
 export type CommandResult = { lines: string[]; navigate?: string; screen?: ScreenRequest; clear?: boolean };
 type Node = { kind: 'directory' } | { kind: 'file'; lines: string[] };
 
+export const introLines = [
+  'Welcome. Curiosity has a desktop now.',
+  '',
+  "I'm Sean. Welcome to Boot Loader's browser terminal.",
+  'Explore browser desktops from a simulated shell.',
+  'No real shell commands or host files are accessed.',
+  '',
+  'Start here:',
+  '  ls               See the available systems',
+  '  boot win11       Open Windows 11 in this tab',
+  '  boot win11 --embed  Try it in the computer screen',
+  'Some systems need a direct tab instead.',
+  '',
+  'Use Tab to complete commands; Up/Down for history.',
+  'Press Esc to discard input without running it.',
+  'Type help for commands or about for the story.',
+];
+
+export const aboutLines = [
+  'About Boot Loader',
+  '',
+  'Built by Sean. A browser pretending to be somewhere',
+  'else, built on the work of open-source communities.',
+  'Boot Loader brings browser desktops together with',
+  'a visual selector and a simulated terminal.',
+  '',
+  "The interesting part isn't making pixels look like",
+  "an operating system. It's seeing how much of the",
+  'experience lives in the details.',
+  '',
+  'Keep exploring: https://vectorindex.cloud',
+  `Boot Loader source: ${repositoryUrl}`,
+  'Type source for the individual system projects.',
+  'Type intro to get started or help for commands.',
+];
+
 export const helpLines = [
   'A simulated shell. No real files or commands.',
+  '  intro            Welcome and getting started',
+  '  about            Project background and author',
   '  ls [path]        List virtual contents',
   '  pwd / cwd        Show the virtual directory',
   '  cd [path]        Change directory (home: /systems)',
@@ -96,6 +134,7 @@ export function executeCommand(input: string, session = new TerminalSession()): 
   const command = parsed[1].toLowerCase();
   const argument = parsed[2]?.trim() ?? '';
   const args = argument ? argument.split(/\s+/) : [];
+  if (command === 'intro' || command === 'about') return { lines: args.length ? [`Usage: ${command}`] : [...(command === 'intro' ? introLines : aboutLines)] };
   if (command === 'help') return { lines: args.length ? ['Usage: help'] : helpLines };
   if (command === 'clear' || command === 'cls') return args.length ? { lines: ['Usage: clear'] } : { lines: [], clear: true };
   if (command === 'pwd' || command === 'cwd') return { lines: args.length ? [`Usage: ${command}`] : [session.cwd] };
