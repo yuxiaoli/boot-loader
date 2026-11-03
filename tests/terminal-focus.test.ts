@@ -64,7 +64,7 @@ test('initial banner uses package version and copyright, one blank line, then pr
   vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
   mountTerminal({ querySelector: () => input, closest: () => null } as unknown as HTMLElement);
   expect(handlers.output.join('')).toBe(
-    `Boot Loader [Version ${version}]\r\nCopyright (c) Vector Index. All rights reserved.\r\n\r\nsystems> `,
+    `Boot Loader [Version ${version}]\r\nCopyright (c) Vector Index. All rights reserved.\r\n\r\n/systems> `,
   );
 });
 
@@ -78,12 +78,12 @@ test('Escape discards draft without executing or erasing history; composing keys
   mountTerminal({ querySelector: () => input, closest: () => null } as unknown as HTMLElement);
   handlers.data!('echo retained'); handlers.data!('\r');
   handlers.data!('echo discarded'); handlers.data!('\x1b');
-  expect(handlers.output.at(-1)).toBe('\r\x1b[2Ksystems> ');
+  expect(handlers.output.at(-1)).toBe('\r\x1b[2K/systems> ');
   expect(handlers.output).not.toContain('discarded\r\n');
   handlers.data!('\x1b[A');
-  expect(handlers.output.at(-1)).toBe('\r\x1b[2Ksystems> echo retained');
+  expect(handlers.output.at(-1)).toBe('\r\x1b[2K/systems> echo retained');
   handlers.data!('\x1b'); handlers.data!('\x1b[B');
-  expect(handlers.output.at(-1)).toBe('\r\x1b[2Ksystems> ');
+  expect(handlers.output.at(-1)).toBe('\r\x1b[2K/systems> ');
   handlers.data!('echo pending');
   listeners.compositionstart();
   const count = handlers.output.length;
@@ -91,7 +91,7 @@ test('Escape discards draft without executing or erasing history; composing keys
   handlers.data!('\x1b'); handlers.data!('\r');
   expect(handlers.output.length).toBe(count);
   listeners.compositionend(); handlers.data!('\x1b');
-  expect(handlers.output.at(-1)).toBe('\r\x1b[2Ksystems> ');
+  expect(handlers.output.at(-1)).toBe('\r\x1b[2K/systems> ');
 });
 
 test('accessible preset controls update options and motion preference without stealing focus', () => {
