@@ -45,8 +45,10 @@ if (host) {
     }
     requested = true;
     try {
-      const { mountTerminal } = await import('./terminal');
-      focusConsole = mountTerminal(host);
+      const [{ mountTerminal }, { createPopularTerminalLoader }] = await Promise.all([
+        import('./terminal'), import('./terminal-catalog-api'),
+      ]);
+      focusConsole = mountTerminal(host, createPopularTerminalLoader());
       document.querySelector('#terminal-loading')?.remove();
       if (pendingFocus) { focusConsole(); pendingFocus = false; }
     } catch {

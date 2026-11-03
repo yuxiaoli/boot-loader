@@ -8,8 +8,8 @@ import { openComputer } from './screen-session';
 import { version } from '../package.json';
 import { mountCatalogControls, type CatalogLoader } from './terminal-catalog-controls';
 
-// Production callers pass no loader: catalogue activation remains disabled until
-// an approved publishable, pinned source asset is available. No implicit fetch.
+// The production entry point explicitly injects the approved public API loader.
+// Tests and other callers may omit it to use built-in themes without a fetch.
 export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader): () => void {
   const loading = document.querySelector<HTMLElement>('#terminal-loading');
   if (loading) loading.hidden = true;
