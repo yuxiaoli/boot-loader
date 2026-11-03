@@ -28,7 +28,7 @@ The build creates a real `index.html` for each route, including accessible links
 
 ## Commands
 
-Start in `/systems`. The prompt displays `systems> ` (with a trailing space); `pwd` and `cwd` still report the absolute virtual path. At root the prompt displays `/> `. `ls` lists `daedalos`, `macos`, `win12`, `winxp`, `win11`, `webvm` and `ubuntu`.
+Start in `/systems`. The prompt displays the absolute virtual path, `/systems> ` (with a trailing space), consistently with `pwd` and `cwd`. At root the prompt displays `/> `. `ls` lists `daedalos`, `macos`, `win12`, `winxp`, `win11`, `webvm` and `ubuntu`.
 
 ```text
 intro
