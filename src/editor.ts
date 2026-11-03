@@ -1,8 +1,8 @@
 import { destinations, findDestination } from './destinations';
 import { virtualPathCompletions } from './commands';
 
-const commands = ['about', 'boot', 'cat', 'cd', 'clear', 'cls', 'cwd', 'echo', 'help', 'intro', 'ls', 'open', 'pwd', 'set', 'source', 'time'];
-export function complete(line: string, variableNames: string[] = [], cwd = '/systems'): string[] {
+const commands = ['about', 'boot', 'cat', 'cd', 'clear', 'cls', 'cwd', 'echo', 'help', 'intro', 'ls', 'open', 'pwd', 'refit', 'set', 'source', 'theme', 'themes', 'time'];
+export function complete(line: string, variableNames: string[] = [], cwd = '/systems', themeIds: string[] = []): string[] {
   if (!line.trim()) return [];
   const start = line.search(/\S*$/);
   const head = line.slice(0, start);
@@ -19,23 +19,24 @@ export function complete(line: string, variableNames: string[] = [], cwd = '/sys
     if (!values.length) candidates = command === 'boot' ? destinations.map((os) => os.id) : variableNames.map((name) => `$${name}`);
     if (!args.includes('--embed')) candidates.push('--embed');
   } else if (command === 'source' && !args.length) candidates = destinations.map((os) => os.id);
+  else if (command === 'theme' && !args.length) candidates = themeIds;
   else if (['cd', 'cat', 'ls'].includes(command) && !args.length) return virtualPathCompletions(token, cwd, command === 'cd').map((value) => head + value);
-  return candidates.filter((value) => value.startsWith(value.startsWith('$') ? token : token.toLowerCase())).map((value) => head + value);
+  return candidates.filter((value) => (command === 'theme' ? value.toLowerCase().startsWith(token.toLowerCase()) : value.startsWith(value.startsWith('$') ? token : token.toLowerCase()))).map((value) => head + value);
 }
 
 type CompletionEdit = { line: string; cursor: number };
-type CompletionContext = { cwd?: string; variableNames?: string[] };
+type CompletionContext = { cwd?: string; variableNames?: string[]; themeIds?: string[] };
 
 /** A cycle belongs to the original prefix until input, caret or context changes. */
 export class CompletionCycle {
   private active?: { key: string; edits: CompletionEdit[]; index: number; result: CompletionEdit };
   reset(): void { this.active = undefined; }
-  private key(context: CompletionContext): string { return JSON.stringify([context.cwd ?? '/systems', context.variableNames ?? []]); }
+  private key(context: CompletionContext): string { return JSON.stringify([context.cwd ?? '/systems', context.variableNames ?? [], context.themeIds ?? []]); }
   private current(line: string, cursor: number, context: CompletionContext): boolean {
     return !!this.active && this.active.key === this.key(context) && this.active.result.line === line && this.active.result.cursor === cursor;
   }
   canComplete(line: string, cursor: number, context: CompletionContext): boolean {
-    return this.current(line, cursor, context) || complete(line.slice(0, cursor), context.variableNames, context.cwd).length > 0;
+    return this.current(line, cursor, context) || complete(line.slice(0, cursor), context.variableNames, context.cwd, context.themeIds).length > 0;
   }
   next(line: string, cursor: number, context: CompletionContext, direction: -1 | 1 = 1): CompletionEdit | undefined {
     if (this.current(line, cursor, context)) {
@@ -44,7 +45,7 @@ export class CompletionCycle {
       active.result = active.edits[active.index];
       return { ...active.result };
     }
-    const edits = complete(line.slice(0, cursor), context.variableNames, context.cwd).map((value) => ({ line: value + line.slice(cursor), cursor: value.length }));
+    const edits = complete(line.slice(0, cursor), context.variableNames, context.cwd, context.themeIds).map((value) => ({ line: value + line.slice(cursor), cursor: value.length }));
     if (!edits.length) { this.reset(); return; }
     const index = direction === 1 ? 0 : edits.length - 1;
     this.active = { key: this.key(context), edits, index, result: edits[index] };

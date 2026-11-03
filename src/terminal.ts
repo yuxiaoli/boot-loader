@@ -46,7 +46,7 @@ export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader
   const completion = new CompletionCycle();
   const session = new TerminalSession(new URL(import.meta.env.BASE_URL, location.origin).href);
   const maxLength = () => 2200;
-  const completionContext = () => ({ cwd: session.cwd, variableNames: [...session.variables.keys()] });
+  const completionContext = () => ({ cwd: session.cwd, variableNames: [...session.variables.keys()], themeIds: session.themes.map(t => t.id) });
   const writePrompt = () => term.write(session.prompt);
   const redraw = () => {
     const view = inputWindow(line, cursor, Math.max(1, term.cols - session.prompt.length - 1));
@@ -58,6 +58,11 @@ export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader
     term.write('\r\n');
     history.add(line.trim());
     const result = executeCommand(line, session);
+    if (result.themeId) {
+      if (catalogControls) catalogControls.select(result.themeId);
+      else { const preset = terminalThemes[result.themeId]; if(preset) { term.options.theme = preset.theme; if(themeControl) themeControl.value = result.themeId; } }
+    }
+    if (result.refit) { initializeTerminalHeight(host, true); fit.fit(); }
     if (result.clear) term.write('\x1b[2J\x1b[3J\x1b[H');
     result.lines.forEach((output) => term.writeln(output));
     reset();
@@ -120,11 +125,11 @@ export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader
   }
   const catalogControls = catalogRoot && catalogueLoader ? mountCatalogControls(catalogRoot, catalogueLoader, theme => {
     term.options.theme = theme ?? terminalThemes[themeControl?.value ?? 'green']?.theme ?? terminalTheme;
-  }) : null;
-  if (themeControl) themeControl.disabled = false;
+  }, themes => { session.themes = themes; completion.reset(); }) : null;
+  if (themeControl) { themeControl.disabled = false; if(catalogControls) themeControl.closest('label')!.hidden = true; }
   themeControl?.addEventListener('change', () => {
     const preset = terminalThemes[themeControl.value];
-    if (preset) { term.options.theme = preset.theme; catalogControls?.useBuiltin(); }
+    if (preset) { term.options.theme = preset.theme; catalogControls?.useBuiltin(themeControl.value); }
   });
   const updateMotion = () => { term.options.cursorBlink = !motion.matches; };
   motion.addEventListener('change', updateMotion);

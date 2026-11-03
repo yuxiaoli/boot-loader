@@ -65,7 +65,7 @@ Arrow keys edit and recall history; Esc clears only the unsubmitted input and ke
 
 The rectangular block cursor uses native xterm blinking while focused, with cursor-only 50% alpha. It uses an outline on blur and remains steady when reduced motion is requested, including preference changes during the session. Text stays fully bright `#11FF00` on black, with a neutral gray scrollbar and tighter 1.25 line spacing. Long input scrolls horizontally within the prompt without losing URL characters during a resize. No real shell, filesystem, OS environment or process is used.
 
-Labeled native selectors offer 12–24px font sizes and named Classic green, Amber, and Soft white presets; there is no color picker. Add future presets to `terminalThemes` in `src/terminal-appearance.ts`. Choices are session-only. The standalone terminal measures its available viewport space below the header and controls once at mount; its pixel height stays fixed through subsequent window/keyboard resizes, while xterm refits rows and columns. The homepage terminal keeps its existing height rules.
+Labeled native selectors offer 12–24px font sizes and named Classic green, Amber, and Soft white presets; there is no color picker. Add future presets to `terminalThemes` in `src/terminal-appearance.ts`. Choices are session-only. The standalone terminal measures its available viewport space below the header and controls once at mount; its pixel height stays fixed through subsequent window/keyboard resizes, while xterm refits rows and columns. The homepage terminal keeps its existing height rules until an explicit `refit` command. `refit` recalculates available viewport height without recreating xterm, clearing output, or resetting variables/history.
 
 ## Launch modes
 
@@ -82,3 +82,15 @@ Edit `src/destinations.ts` to update destinations. See [design decisions](docs/D
 3. Open a draft PR against `develop`, review the diff and checks, then merge normally when requirements pass. Never force a changed remote head.
 4. GitHub Actions validates that exact commit and deploys its `dist` artifact to Pages. The `github-pages` environment must permit `develop`; preserve existing protection rules and report any restriction instead of bypassing it.
 5. Verify `https://yuxiaoli.github.io/boot-loader/version.json` matches the deployed `develop` SHA, then verify live routes/assets and interactions.
+
+### Theme controls and commands
+
+The activated catalogue uses one searchable combobox for built-in and approved catalogue palettes. Type to filter, use Up/Down and Enter to select, PageUp/PageDown to change result pages, or Escape to close without changing the palette. Results are paginated in groups of 50 so every matching identity is reachable without rendering the whole catalogue. Loading and failed refreshes keep built-ins available; failed refreshes retain the last-good catalogue and selected palette. Attribution remains visible for the applied palette.
+
+- `themes [search]` lists available IDs and names.
+- `theme <id>` applies an exact ID; Tab/Shift+Tab cycle matching IDs.
+- `refit` fits the terminal to the current viewport without resetting the session.
+
+The API loader is configured separately from the selector; only verified public terminal themes explicitly marked popular may be activated. Editor themes and unknown popularity are not inferred as terminal/popular.
+
+The API v1 consumer reads `https://yuxiaoli.github.io/themes-catalog-api/api/v1/terminal/index.json` and selects only entry identities with explicit `popularity.flags[id] === true`, preserving `popularity.order`. Popularity is not a third category or a server query parameter. Missing metadata fails closed; missing individual flags mean unknown. The loader requests only validated public terminal-detail paths (four at a time), checks identity, palette and publication evidence, and retains a SHA-256 index revision plus the upstream popularity revision. No private snapshot is bundled. A timeout or invalid detail rejects the refresh without replacing a last-good selection.

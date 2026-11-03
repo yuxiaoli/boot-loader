@@ -114,3 +114,23 @@ test('accessible preset controls update options and motion preference without st
   motion.matches = false; events.motion(); expect(handlers.options.cursorBlink).toBe(true);
   expect(document.activeElement).toBe(font);
 });
+
+test('theme command and explicit viewport refit preserve variables, cwd, output and command history', () => {
+  const input = { setAttribute() {}, addEventListener() {} };
+  vi.stubGlobal('document', { querySelector: () => null });
+  vi.stubGlobal('window', { innerWidth: 1280, innerHeight: 900, matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }), addEventListener() {} });
+  vi.stubGlobal('getComputedStyle', () => ({ marginBottom: '10px' }));
+  vi.stubGlobal('location', { origin: 'http://localhost' });
+  vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+  const host = { querySelector: () => input, closest: () => null, style: {height:'320px'}, getBoundingClientRect:()=>({top:300}) };
+  mountTerminal(host as unknown as HTMLElement);
+  const run=(s:string)=>{handlers.data!(s);handlers.data!('\r');};
+  run('cd /');run('set home=https://example.com');run('echo retained');run('theme amber');
+  expect(handlers.options.theme).toMatchObject({foreground:'#FFBF00'});
+  run('refit');expect(host.style.height).toBe('589px');
+  expect(handlers.output).toContain('retained\r\n');expect(handlers.output.at(-1)).toBe('/> ');
+  handlers.data!('\x1b[A');expect(handlers.output.at(-1)).toContain('refit');
+  handlers.data!('\x1b');handlers.data!('open $h');handlers.data!('\t');
+  expect(handlers.output.at(-1)).toContain('open $home');
+  expect(handlers.output.join('')).not.toContain('\x1b[3J');
+});

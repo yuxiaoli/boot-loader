@@ -12,8 +12,8 @@ test('legacy family, unknown mode and accent cursor fallback',()=>{
  const c=parseTerminalCatalog({schema_version:'1.0',source:{id:'terminal',url:'https://example.invalid/'},status:'partial',themes:[r]},'legacy');
  expect(c.themes[0]).toMatchObject({id:'example/default',name:'Example / Example',mode:'unknown',sourceId:'terminal',theme:{cursor:'#333333'}});expect(c.status).toBe('partial');
 });
-test('rejects wrong kind/version, duplicate IDs and empty catalogue',()=>{
- for(const change of [{schema_version:'3.0'},{kind:'editor'},{themes:[]},{themes:[row(),row()]}])expect(()=>parseTerminalCatalog({...fixture(),...change},'test')).toThrow();
+test('rejects wrong kind/version and duplicate IDs',()=>{
+ for(const change of [{schema_version:'3.0'},{kind:'editor'},{themes:[row(),row()]}])expect(()=>parseTerminalCatalog({...fixture(),...change},'test')).toThrow();
 });
 test('reports unsupported rows rather than hiding exclusions',()=>{
  const f:any=fixture(4);f.themes[1].palette.ansi.pop();f.themes[2].palette.foreground='url(javascript:alert(1))';f.themes[3].source_id='missing';

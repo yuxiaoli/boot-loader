@@ -21,9 +21,9 @@ export const terminalThemes: Record<string, { label: string; theme: ITheme }> = 
 };
 export const terminalFontSizes = [12, 13, 15, 17, 20, 24];
 
-/** Freeze the standalone host's initial available height; subsequent fits only resize columns/rows. */
-export function initializeTerminalHeight(host: HTMLElement): void {
-  if (!host.closest('.standalone-terminal')) return;
+/** Measure once at mount, or on explicit refit. Ordinary resizing preserves the chosen height. */
+export function initializeTerminalHeight(host: HTMLElement, force = false): void {
+  if (!force && !host.closest('.standalone-terminal')) return;
   const viewport = window.visualViewport;
   const bottom = (viewport?.offsetTop ?? 0) + (viewport?.height ?? window.innerHeight);
   const margin = Number.parseFloat(getComputedStyle(host).marginBottom) || 0;
