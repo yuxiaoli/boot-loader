@@ -21,3 +21,23 @@ test('completion discovers commands and exact catalog IDs with cycling and catal
  expect(c.next(a.line,a.cursor,ctx)!.line).toBe('theme gogh/Dark');
  expect(c.canComplete('theme g',7,{themeIds:[]})).toBe(false);
 });
+
+test('unique names with spaces work and complete; duplicate names never guess',()=>{
+ const s=new TerminalSession();s.themes.push({id:'gogh/one',name:'Solarized Dark'},{id:'gogh/two',name:'Dracula'},{id:'gogh/three',name:'Dracula'});
+ expect(executeCommand('theme solarized dark',s).themeId).toBe('gogh/one');
+ expect(executeCommand('theme Dracula',s).themeId).toBeUndefined();
+ expect(executeCommand('theme Dracula',s).lines[0]).toContain('Ambiguous');
+ expect(executeCommand('theme gogh/two',s).themeId).toBe('gogh/two');
+ const ids=s.themes.map(t=>t.id),names=s.themes.map(t=>t.name);
+ expect(complete('theme Solarized D',[],undefined,ids,names)).toEqual(['theme Solarized Dark']);
+ expect(complete('theme dra',[],undefined,ids,names)).toEqual([]);
+ expect(complete('theme bad',[],undefined,ids,['bad\x1b[2J'])).toEqual([]);
+});
+
+test('a catalogue display name cannot shadow a different theme ID',()=>{
+ const s=new TerminalSession();s.themes.push({id:'gogh/green',name:'Green'});
+ expect(executeCommand('theme green',s).themeId).toBe('green');
+ expect(executeCommand('theme Green',s).themeId).toBeUndefined();
+ expect(executeCommand('theme gogh/green',s).themeId).toBe('gogh/green');
+ expect(complete('theme gr',[],undefined,s.themes.map(t=>t.id),s.themes.map(t=>t.name))).toEqual(['theme green']);
+});
