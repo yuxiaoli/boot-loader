@@ -57,7 +57,7 @@ export const helpLines = [
   '  set name=<URL>   Save a session-only URL',
   '  time             Local time and browser time zone',
   '  themes [search]  List available terminal themes',
-  '  theme <id>       Apply a theme (Tab completes IDs)',
+  '  theme <id|name>  Apply a theme (Tab completes names)',
   '  refit            Fit terminal to current viewport',
   '  source [system]  Show sources or open one',
   '  clear / cls      Clear the display',
@@ -146,9 +146,12 @@ export function executeCommand(input: string, session = new TerminalSession()): 
     return { lines: matches.length ? matches.map(t => `${t.id}  ${t.name}`.replace(/[\x00-\x1f\x7f-\x9f]/g, '')) : ['No matching themes.'] };
   }
   if (command === 'theme') {
-    if (args.length !== 1) return { lines: ['Usage: theme <id> (use themes to list IDs)'] };
-    const theme = session.themes.find(t => t.id === args[0]);
-    return theme ? { lines: [`Theme: ${theme.name}`.replace(/[\x00-\x1f\x7f-\x9f]/g, '')], themeId: theme.id } : { lines: [`Unknown theme: ${args[0]}`, 'Use themes to list available IDs.'] };
+    if (!argument) return { lines: ['Usage: theme <id|name> (use themes to list IDs)'] };
+    const exact = session.themes.find(t => t.id === argument);
+    const names = session.themes.filter(t => t.name.trim().toLowerCase() === argument.toLowerCase() && !session.themes.some(other => other.id !== t.id && other.id.toLowerCase() === argument.toLowerCase()));
+    if (!exact && names.length > 1) return { lines: ['Ambiguous theme name; use an exact ID:', ...names.map(t => t.id)] };
+    const theme = exact ?? names[0];
+    return theme ? { lines: [`Theme: ${theme.name}`.replace(/[\x00-\x1f\x7f-\x9f]/g, '')], themeId: theme.id } : { lines: [`Unknown theme: ${argument}`, 'Use themes to list available IDs.'] };
   }
   if (command === 'refit') return args.length ? { lines: ['Usage: refit'] } : { lines: ['Terminal fitted to the current viewport.'], refit: true };
   if (command === 'help') return { lines: args.length ? ['Usage: help'] : helpLines };

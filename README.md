@@ -88,7 +88,7 @@ Edit `src/destinations.ts` to update destinations. See [design decisions](docs/D
 The activated catalogue uses one searchable combobox for built-in and approved catalogue palettes. Type to filter, use Up/Down and Enter to select, PageUp/PageDown to change result pages, or Escape to close without changing the palette. Results are paginated in groups of 50 so every matching identity is reachable without rendering the whole catalogue. Loading and failed refreshes keep built-ins available; failed refreshes retain the last-good catalogue and selected palette. Attribution remains visible for the applied palette.
 
 - `themes [search]` lists available IDs and names.
-- `theme <id>` applies an exact ID; Tab/Shift+Tab cycle matching IDs.
+- `theme <id|name>` applies an exact ID or a unique name (including spaces). Tab/Shift+Tab cycle matching names and IDs; duplicate names require exact IDs.
 - `refit` fits the terminal to the current viewport without resetting the session.
 
 The API loader is configured separately from the selector; only verified public terminal themes explicitly marked popular may be activated. Editor themes and unknown popularity are not inferred as terminal/popular.

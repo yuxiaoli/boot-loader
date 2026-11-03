@@ -46,7 +46,7 @@ export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader
   const completion = new CompletionCycle();
   const session = new TerminalSession(new URL(import.meta.env.BASE_URL, location.origin).href);
   const maxLength = () => 2200;
-  const completionContext = () => ({ cwd: session.cwd, variableNames: [...session.variables.keys()], themeIds: session.themes.map(t => t.id) });
+  const completionContext = () => ({ cwd: session.cwd, variableNames: [...session.variables.keys()], themeIds: session.themes.map(t => t.id), themeNames: session.themes.map(t => t.name) });
   const writePrompt = () => term.write(session.prompt);
   const redraw = () => {
     const view = inputWindow(line, cursor, Math.max(1, term.cols - session.prompt.length - 1));

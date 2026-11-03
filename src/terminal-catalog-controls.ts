@@ -3,7 +3,7 @@ import { CatalogSession } from './terminal-catalog';
 import { terminalThemes } from './terminal-appearance';
 
 export type CatalogLoader = () => Promise<{data: unknown; revision: string}>;
-export type ThemeChoice = {id: string; name: string};
+export type ThemeChoice = {id: string; name: string; label?: string};
 let nextControlId = 0;
 
 /** One searchable selector for built-ins and the caller's approved catalogue.
@@ -39,12 +39,12 @@ export function mountCatalogControls(root: HTMLElement, load: CatalogLoader, app
   }
   const choices = (): ThemeChoice[] => [
     ...Object.entries(terminalThemes).map(([id, t]) => ({id, name: t.label})),
-    ...(session.current?.themes.map(t => ({id: t.id, name: `${t.name} · ${t.sourceId} · ${t.mode}`})) ?? []),
+    ...(session.current?.themes.map(t => ({id: t.id, name: t.name, label: `${t.name} · ${t.sourceId} · ${t.mode}`})) ?? []),
   ];
   const selectedId = () => session.selectedId ?? builtinId;
   const matches = () => {
     const terms = search.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    return choices().filter(t => terms.every(s => `${t.name} ${t.id}`.toLowerCase().includes(s)));
+    return choices().filter(t => terms.every(s => `${t.label ?? t.name} ${t.id}`.toLowerCase().includes(s)));
   };
   function close() { expanded = false; active = -1; offset = 0; search.value = ''; draw(); }
   function select(id: string): boolean {
@@ -66,7 +66,7 @@ export function mountCatalogControls(root: HTMLElement, load: CatalogLoader, app
     page.forEach((theme, i) => {
       const option = document.createElement('div'); option.id = `${id}-${i}`;
       option.setAttribute('role', 'option'); option.setAttribute('aria-selected', String(theme.id === selectedId()));
-      option.textContent = theme.name; option.dataset.themeId = theme.id;
+      option.textContent = theme.label ?? theme.name; option.dataset.themeId = theme.id;
       if (expanded && i === active) {option.classList.add('is-active'); search.setAttribute('aria-activedescendant', option.id);}
       // Keep input focus while selecting with a pointer.
       option.addEventListener('mousedown', e=>e.preventDefault());

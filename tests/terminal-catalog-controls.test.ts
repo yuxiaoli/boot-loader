@@ -74,7 +74,7 @@ test('ArrowUp starts at the last visible result; selection synchronizes command 
  const root=document.createElement('section');document.body.append(root);roots.push(root);
  const changed=vi.fn(),apply=vi.fn();
  const controller=mountCatalogControls(root,async()=>({data:fixture(1),revision:'one'}),apply,changed);
- await settled();expect(changed).toHaveBeenLastCalledWith(expect.arrayContaining([{id:'sample/0',name:'Theme 0 · sample · dark'}]));
+ await settled();expect(changed).toHaveBeenLastCalledWith(expect.arrayContaining([expect.objectContaining({id:'sample/0',name:'Theme 0'})]));
  const input=root.querySelector('input')!;input.focus();input.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowUp',bubbles:true}));
  expect(document.getElementById(input.getAttribute('aria-activedescendant')!)?.textContent).toContain('Theme 0');
  input.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
