@@ -1,8 +1,9 @@
 import { destinations, findDestination, repositoryUrl } from './destinations';
 import { validateLoadUrl } from './load-url';
+import { terminalThemes } from './terminal-appearance';
 
 export type ScreenRequest = { url: string; label: string; kind: 'registry' | 'custom'; directOnly?: string };
-export type CommandResult = { lines: string[]; navigate?: string; screen?: ScreenRequest; clear?: boolean };
+export type CommandResult = { lines: string[]; navigate?: string; screen?: ScreenRequest; clear?: boolean; themeId?: string; refit?: boolean };
 type Node = { kind: 'directory' } | { kind: 'file'; lines: string[] };
 
 export const introLines = [
@@ -55,6 +56,9 @@ export const helpLines = [
   '    --embed        Use the computer screen instead',
   '  set name=<URL>   Save a session-only URL',
   '  time             Local time and browser time zone',
+  '  themes [search]  List available terminal themes',
+  '  theme <id>       Apply a theme (Tab completes IDs)',
+  '  refit            Fit terminal to current viewport',
   '  source [system]  Show sources or open one',
   '  clear / cls      Clear the display',
   '  help             Show this guide',
@@ -122,6 +126,7 @@ export function virtualPathCompletions(prefix: string, cwd: string, directoriesO
 /** No browser storage, host environment, evaluation or external filesystem. */
 export class TerminalSession {
   cwd = '/systems';
+  themes = Object.entries(terminalThemes).map(([id, t]) => ({ id, name: t.label }));
   readonly variables = new Map<string, string>();
   constructor(readonly siteUrl = 'https://yuxiaoli.github.io/boot-loader/') {}
   get prompt() { return `${this.cwd === '/' ? '/' : this.cwd.slice(1)}> `; }
@@ -135,6 +140,17 @@ export function executeCommand(input: string, session = new TerminalSession()): 
   const argument = parsed[2]?.trim() ?? '';
   const args = argument ? argument.split(/\s+/) : [];
   if (command === 'intro' || command === 'about') return { lines: args.length ? [`Usage: ${command}`] : [...(command === 'intro' ? introLines : aboutLines)] };
+  if (command === 'themes') {
+    const terms = argument.toLowerCase().split(/\s+/).filter(Boolean);
+    const matches = session.themes.filter(t => terms.every(q => `${t.id} ${t.name}`.toLowerCase().includes(q)));
+    return { lines: matches.length ? matches.map(t => `${t.id}  ${t.name}`.replace(/[\x00-\x1f\x7f-\x9f]/g, '')) : ['No matching themes.'] };
+  }
+  if (command === 'theme') {
+    if (args.length !== 1) return { lines: ['Usage: theme <id> (use themes to list IDs)'] };
+    const theme = session.themes.find(t => t.id === args[0]);
+    return theme ? { lines: [`Theme: ${theme.name}`.replace(/[\x00-\x1f\x7f-\x9f]/g, '')], themeId: theme.id } : { lines: [`Unknown theme: ${args[0]}`, 'Use themes to list available IDs.'] };
+  }
+  if (command === 'refit') return args.length ? { lines: ['Usage: refit'] } : { lines: ['Terminal fitted to the current viewport.'], refit: true };
   if (command === 'help') return { lines: args.length ? ['Usage: help'] : helpLines };
   if (command === 'clear' || command === 'cls') return args.length ? { lines: ['Usage: clear'] } : { lines: [], clear: true };
   if (command === 'pwd' || command === 'cwd') return { lines: args.length ? [`Usage: ${command}`] : [session.cwd] };
