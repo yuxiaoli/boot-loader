@@ -3,7 +3,8 @@ import { validateLoadUrl } from './load-url';
 import { terminalThemes } from './terminal-appearance';
 
 export type ScreenRequest = { url: string; label: string; kind: 'registry' | 'custom'; directOnly?: string };
-export type CommandResult = { lines: string[]; navigate?: string; screen?: ScreenRequest; clear?: boolean; themeId?: string; refit?: boolean };
+export function themeSlug(name: string): string { return name.trim().toLowerCase().replace(/\s+/g, '-'); }
+export type CommandResult = { lines: string[]; navigate?: string; screen?: ScreenRequest; clear?: boolean; themeId?: string; refit?: boolean; refreshThemes?: boolean; reboot?: boolean };
 type Node = { kind: 'directory' } | { kind: 'file'; lines: string[] };
 
 export const introLines = [
@@ -57,7 +58,10 @@ export const helpLines = [
   '  set name=<URL>   Save a session-only URL',
   '  time             Local time and browser time zone',
   '  themes [search]  List available terminal themes',
-  '  theme <id|name>  Apply a theme (Tab completes names)',
+  '  themes refresh   Reload the theme catalogue',
+  '  theme <slug>     Apply a theme (Tab completes slugs)',
+  '  theme default    Restore the built-in theme',
+  '  reboot           Start a fresh terminal session',
   '  refit            Fit terminal to current viewport',
   '  source [system]  Show sources or open one',
   '  clear / cls      Clear the display',
@@ -141,19 +145,30 @@ export function executeCommand(input: string, session = new TerminalSession()): 
   const args = argument ? argument.split(/\s+/) : [];
   if (command === 'intro' || command === 'about') return { lines: args.length ? [`Usage: ${command}`] : [...(command === 'intro' ? introLines : aboutLines)] };
   if (command === 'themes') {
+    if (argument === 'refresh') return { lines: ['Refreshing theme catalogue...'], refreshThemes: true };
     const terms = argument.toLowerCase().split(/\s+/).filter(Boolean);
-    const matches = session.themes.filter(t => terms.every(q => `${t.id} ${t.name}`.toLowerCase().includes(q)));
-    return { lines: matches.length ? matches.map(t => `${t.id}  ${t.name}`.replace(/[\x00-\x1f\x7f-\x9f]/g, '')) : ['No matching themes.'] };
+    const counts = new Map<string, number>();
+    for (const theme of session.themes) {
+      const slug = themeSlug(theme.name);
+      counts.set(slug, (counts.get(slug) ?? 0) + 1);
+    }
+    const matches = session.themes.filter(t => terms.every(q => `${t.id} ${t.name} ${themeSlug(t.name)}`.toLowerCase().includes(q)));
+    return { lines: matches.length ? matches.map(t => {
+      const slug = themeSlug(t.name);
+      const note = slug === 'default' ? ' (reserved; use selector)' : (counts.get(slug) ?? 0) > 1 ? ' (ambiguous; use selector)' : '';
+      return `${slug}  ${t.name}${note}`.replace(/[\x00-\x1f\x7f-\x9f]/g, '');
+    }) : ['No matching themes.'] };
   }
   if (command === 'theme') {
-    if (!argument) return { lines: ['Usage: theme <id|name> (use themes to list IDs)'] };
-    const exact = session.themes.find(t => t.id === argument);
-    const names = session.themes.filter(t => t.name.trim().toLowerCase() === argument.toLowerCase() && !session.themes.some(other => other.id !== t.id && other.id.toLowerCase() === argument.toLowerCase()));
-    if (!exact && names.length > 1) return { lines: ['Ambiguous theme name; use an exact ID:', ...names.map(t => t.id)] };
-    const theme = exact ?? names[0];
-    return theme ? { lines: [`Theme: ${theme.name}`.replace(/[\x00-\x1f\x7f-\x9f]/g, '')], themeId: theme.id } : { lines: [`Unknown theme: ${argument}`, 'Use themes to list available IDs.'] };
+    if (!argument) return { lines: ['Usage: theme <slug> (use themes to list slugs)'] };
+    if (argument === 'default') return { lines: ['Theme: Classic green'], themeId: 'green' };
+    const slugs = session.themes.filter(t => themeSlug(t.name) === argument);
+    if (slugs.length > 1) return { lines: ['Ambiguous theme slug; select a theme in the selector:', ...slugs.map(t => t.name.replace(/[\x00-\x1f\x7f-\x9f]/g, ''))] };
+    const theme = slugs[0];
+    return theme ? { lines: [`Theme: ${theme.name}`.replace(/[\x00-\x1f\x7f-\x9f]/g, '')], themeId: theme.id } : { lines: [`Unknown theme: ${argument}`, 'Use themes to list available slugs.'] };
   }
   if (command === 'refit') return args.length ? { lines: ['Usage: refit'] } : { lines: ['Terminal fitted to the current viewport.'], refit: true };
+  if (command === 'reboot') return args.length ? { lines: ['Usage: reboot'] } : { lines: [], reboot: true };
   if (command === 'help') return { lines: args.length ? ['Usage: help'] : helpLines };
   if (command === 'clear' || command === 'cls') return args.length ? { lines: ['Usage: clear'] } : { lines: [], clear: true };
   if (command === 'pwd' || command === 'cwd') return { lines: args.length ? [`Usage: ${command}`] : [session.cwd] };

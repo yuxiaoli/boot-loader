@@ -134,3 +134,34 @@ test('theme command and explicit viewport refit preserve variables, cwd, output 
   expect(handlers.output.at(-1)).toContain('open $home');
   expect(handlers.output.join('')).not.toContain('\x1b[3J');
 });
+
+test('reboot starts a fresh session and history without refitting or losing appearance', () => {
+  const input = { setAttribute() {}, addEventListener() {} };
+  vi.stubGlobal('document', { querySelector: () => null });
+  vi.stubGlobal('window', { innerWidth: 1280, innerHeight: 900, matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }), addEventListener() {} });
+  vi.stubGlobal('location', { origin: 'http://localhost' });
+  vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+  const host = { querySelector: () => input, closest: () => null, style: { height: '320px' } };
+  mountTerminal(host as unknown as HTMLElement);
+  const run = (s: string) => { handlers.data!(s); handlers.data!('\r'); };
+  run('cd /'); run('set home=https://example.com'); run('theme amber'); run('reboot');
+  expect(handlers.output.at(-1)).toBe('/systems> ');
+  expect(handlers.output.join('')).toContain('\x1b[2J\x1b[3J\x1b[H');
+  expect(handlers.options.theme).toMatchObject({ foreground: '#FFBF00' });
+  expect(host.style.height).toBe('320px');
+  handlers.data!('\x1b[A'); expect(handlers.output.at(-1)).toBe('\r\x1b[2K/systems> ');
+  handlers.data!('open $h'); handlers.data!('\t');
+  expect(handlers.output.at(-1)).not.toContain('$home');
+});
+
+test('refresh reports when no catalogue loader is available', () => {
+  const input = { setAttribute() {}, addEventListener() {} };
+  vi.stubGlobal('document', { querySelector: () => null });
+  vi.stubGlobal('window', { innerWidth: 1280, matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }), addEventListener() {} });
+  vi.stubGlobal('location', { origin: 'http://localhost' });
+  vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+  mountTerminal({ querySelector: () => input, closest: () => null } as unknown as HTMLElement);
+  handlers.data!('themes refresh'); handlers.data!('\r');
+  expect(handlers.output.join('')).toContain('Theme catalogue is unavailable.');
+  expect(handlers.output.join('')).not.toContain('Refreshing theme catalogue...');
+});
