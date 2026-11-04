@@ -135,23 +135,19 @@ test('theme command and explicit viewport refit preserve variables, cwd, output 
   expect(handlers.output.join('')).not.toContain('\x1b[3J');
 });
 
-test('reboot starts a fresh session and history without refitting or losing appearance', () => {
+test('reboot reloads the page once without refitting; arguments do not reload', () => {
   const input = { setAttribute() {}, addEventListener() {} };
+  const reload = vi.fn();
   vi.stubGlobal('document', { querySelector: () => null });
-  vi.stubGlobal('window', { innerWidth: 1280, innerHeight: 900, matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }), addEventListener() {} });
+  vi.stubGlobal('window', { location: { reload }, innerWidth: 1280, innerHeight: 900, matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }), addEventListener() {} });
   vi.stubGlobal('location', { origin: 'http://localhost' });
   vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
   const host = { querySelector: () => input, closest: () => null, style: { height: '320px' } };
   mountTerminal(host as unknown as HTMLElement);
   const run = (s: string) => { handlers.data!(s); handlers.data!('\r'); };
-  run('cd /'); run('set home=https://example.com'); run('theme amber'); run('reboot');
-  expect(handlers.output.at(-1)).toBe('/systems> ');
-  expect(handlers.output.join('')).toContain('\x1b[2J\x1b[3J\x1b[H');
-  expect(handlers.options.theme).toMatchObject({ foreground: '#FFBF00' });
+  run('reboot now'); expect(reload).not.toHaveBeenCalled();
+  run('reboot'); expect(reload).toHaveBeenCalledOnce();
   expect(host.style.height).toBe('320px');
-  handlers.data!('\x1b[A'); expect(handlers.output.at(-1)).toBe('\r\x1b[2K/systems> ');
-  handlers.data!('open $h'); handlers.data!('\t');
-  expect(handlers.output.at(-1)).not.toContain('$home');
 });
 
 test('refresh reports when no catalogue loader is available', () => {

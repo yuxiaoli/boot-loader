@@ -61,7 +61,7 @@ export const helpLines = [
   '  themes refresh   Reload the theme catalogue',
   '  theme <slug>     Apply a theme (Tab completes slugs)',
   '  theme default    Restore the built-in theme',
-  '  reboot           Start a fresh terminal session',
+  '  reboot           Reload the current page',
   '  refit            Fit terminal to current viewport',
   '  source [system]  Show sources or open one',
   '  clear / cls      Clear the display',

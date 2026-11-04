@@ -40,10 +40,9 @@ export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader
   input.addEventListener('compositionend', () => { composing = false; });
   let line = '';
   let cursor = 0;
-  let history = new CommandHistory();
+  const history = new CommandHistory();
   const completion = new CompletionCycle();
-  const createSession = () => new TerminalSession(new URL(import.meta.env.BASE_URL, location.origin).href);
-  let session = createSession();
+  const session = new TerminalSession(new URL(import.meta.env.BASE_URL, location.origin).href);
   const maxLength = () => 2200;
   const completionContext = () => ({ cwd: session.cwd, variableNames: [...session.variables.keys()], themeIds: session.themes.map(t => t.id), themeNames: session.themes.map(t => t.name) });
   const writePrompt = () => term.write(session.prompt);
@@ -58,11 +57,7 @@ export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader
     history.add(line.trim());
     const result = executeCommand(line, session);
     if (result.reboot) {
-      const themes = session.themes;
-      session = createSession(); session.themes = themes;
-      history = new CommandHistory();
-      term.write('\x1b[2J\x1b[3J\x1b[H');
-      reset(); writeBanner(); writePrompt();
+      window.location.reload();
       return;
     }
     if (result.themeId) {
