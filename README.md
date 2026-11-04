@@ -28,7 +28,7 @@ The build creates a real `index.html` for each route, including accessible links
 
 ## Commands
 
-Start in `/systems`. The prompt displays `systems> ` (with a trailing space); `pwd` and `cwd` still report the absolute virtual path. At root the prompt displays `/> `. `ls` lists `daedalos`, `macos`, `win12`, `winxp`, `win11`, `webvm` and `ubuntu`.
+Start in `/systems`. The prompt displays the absolute virtual path, `/systems> ` (with a trailing space), consistently with `pwd` and `cwd`. At root the prompt displays `/> `. `ls` lists `daedalos`, `macos`, `win12`, `winxp`, `win11`, `webvm` and `ubuntu`.
 
 ```text
 intro
@@ -85,10 +85,12 @@ Edit `src/destinations.ts` to update destinations. See [design decisions](docs/D
 
 ### Theme controls and commands
 
-The activated catalogue uses one searchable combobox for built-in and approved catalogue palettes. Type to filter, use Up/Down and Enter to select, PageUp/PageDown to change result pages, or Escape to close without changing the palette. Results are paginated in groups of 50 so every matching identity is reachable without rendering the whole catalogue. Loading and failed refreshes keep built-ins available; failed refreshes retain the last-good catalogue and selected palette. Attribution remains visible for the applied palette.
+The activated catalogue uses one searchable combobox for built-in and approved catalogue palettes. Type to filter, use Up/Down and Enter to select, PageUp/PageDown to change result pages, or Escape to close without changing the palette. Results are paginated in groups of 50 so every matching identity is reachable without rendering the whole catalogue. Loading and failed refreshes keep built-ins available; failed refreshes retain the last-good catalogue and selected palette. Attribution for the applied palette appears when the control is open.
 
-- `themes [search]` lists available IDs and names.
-- `theme <id|name>` applies an exact ID or a unique name (including spaces). Tab/Shift+Tab cycle matching names and IDs; duplicate names require exact IDs.
+- `themes [search]` lists theme names and their lowercase command slugs, with spaces replaced by hyphens. Colliding or reserved slugs are marked for selection in the Theme control.
+- `theme <slug>` applies a theme, for example `theme solarized-dark`. Tab/Shift+Tab cycle matching unambiguous slugs.
+- `theme default` restores the built-in Classic green theme; `themes refresh` reloads the catalogue.
+- `reboot` starts a fresh simulated session, clearing session variables and history while preserving the current appearance preferences. It does not restart the operating system or refit the viewport.
 - `refit` fits the terminal to the current viewport without resetting the session.
 
 The API loader is configured separately from the selector; only verified public terminal themes explicitly marked popular may be activated. Editor themes and unknown popularity are not inferred as terminal/popular.

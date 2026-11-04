@@ -9,15 +9,30 @@ test('cls is an exact clear alias, including invalid arguments', () => {
   expect(executeCommand('CLS extra')).toEqual(executeCommand('clear extra'));
 });
 
-test('the friendly prompt omits the initial leading slash without changing the virtual cwd', () => {
+test('the prompt displays the absolute virtual cwd through relative and root navigation', () => {
   const session = new TerminalSession();
-  expect(session.prompt).toBe('systems> ');
+  expect(session.prompt).toBe('/systems> ');
   expect(executeCommand('pwd', session).lines).toEqual(['/systems']);
   executeCommand('cd /', session);
   expect(session.prompt).toBe('/> ');
   expect(executeCommand('pwd', session).lines).toEqual(['/']);
   executeCommand('cd systems', session);
-  expect(session.prompt).toBe('systems> ');
+  expect(session.prompt).toBe('/systems> ');
+  executeCommand('cd ./../systems', session);
+  expect(session.prompt).toBe('/systems> ');
+  executeCommand('cd missing', session);
+  expect(session.prompt).toBe('/systems> ');
+  executeCommand('cd /../../', session);
+  expect(session.prompt).toBe('/> ');
+  executeCommand('cd', session);
+  expect(session.prompt).toBe('/systems> ');
+});
+
+test('the prompt preserves a canonical nested path without shortening it', () => {
+  const session = new TerminalSession();
+  // Presentation regression: the current virtual filesystem has no nested directories.
+  session.cwd = '/systems/nested';
+  expect(session.prompt).toBe('/systems/nested> ');
 });
 
 test('boot requires an explicit ID and resolves all seven systems independently of selection', () => {
