@@ -54,6 +54,13 @@ test('reboot requests a fresh session and rejects arguments',()=>{
  expect(executeCommand('reboot now').reboot).toBeUndefined();
 });
 
+test('reload is a distinct page command and is discoverable',()=>{
+ expect(executeCommand('reload')).toEqual({lines:[],reload:true});
+ expect(executeCommand('reload now')).toEqual({lines:['Usage: reload']});
+ expect(executeCommand('help').lines.join('\n')).toContain('reload');
+ expect(complete('relo')).toEqual(['reload']);
+});
+
 test('new commands are discoverable through help and completion',()=>{
  const help=executeCommand('help').lines.join('\n');
  expect(help).toContain('theme <slug>');expect(help).toContain('themes refresh');expect(help).toContain('reboot');

@@ -90,7 +90,7 @@ The activated catalogue uses one searchable combobox for built-in and approved c
 - `themes [search]` lists theme names and their lowercase command slugs, with spaces replaced by hyphens. Colliding or reserved slugs are marked for selection in the Theme control.
 - `theme <slug>` applies a theme, for example `theme solarized-dark`. Tab/Shift+Tab cycle matching unambiguous slugs.
 - `theme default` restores the built-in Classic green theme; `themes refresh` reloads the catalogue.
-- `reboot` reloads the current page. Session-only variables, history and appearance selections reset as they do on a normal page refresh; persistent browser data is retained.
+- `reboot` starts a fresh terminal session, clearing session variables and history while preserving the current appearance preferences. `reload` refreshes the current browser page; session-only state and appearance selections reset as on a normal refresh.
 - `refit` fits the terminal to the current viewport without resetting the session.
 
 The API loader is configured separately from the selector; only verified public terminal themes explicitly marked popular may be activated. Editor themes and unknown popularity are not inferred as terminal/popular.
