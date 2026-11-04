@@ -1,7 +1,7 @@
 import { destinations, findDestination } from './destinations';
-import { virtualPathCompletions } from './commands';
+import { themeSlug, virtualPathCompletions } from './commands';
 
-const commands = ['about', 'boot', 'cat', 'cd', 'clear', 'cls', 'cwd', 'echo', 'help', 'intro', 'ls', 'open', 'pwd', 'refit', 'set', 'source', 'theme', 'themes', 'time'];
+const commands = ['about', 'boot', 'cat', 'cd', 'clear', 'cls', 'cwd', 'echo', 'help', 'intro', 'ls', 'open', 'pwd', 'reboot', 'refit', 'set', 'source', 'theme', 'themes', 'time'];
 export function complete(line: string, variableNames: string[] = [], cwd = '/systems', themeIds: string[] = [], themeNames: string[] = []): string[] {
   if (!line.trim()) return [];
   const start = line.search(/\S*$/);
@@ -14,10 +14,14 @@ export function complete(line: string, variableNames: string[] = [], cwd = '/sys
   if (command === 'theme') {
     const match = /^(\s*theme\s+)(.*)$/i.exec(line);
     if (!match) return [];
-    const names = themeNames.map(n => n.trim()).filter((n, i, all) => n && /^[\x20-\x7e]+$/.test(n) && !themeIds.some(id => id.toLowerCase() === n.toLowerCase()) && all.filter(v => v.toLowerCase() === n.toLowerCase()).length === 1);
-    return [...new Set([...names, ...themeIds])].filter(v => v.toLowerCase().startsWith(match[2].toLowerCase())).map(v => match[1] + v);
+    const slugs = themeNames.map(themeSlug).filter(s => s && /^[\x21-\x7e]+$/.test(s));
+    const counts = new Map<string, number>();
+    for (const slug of slugs) counts.set(slug, (counts.get(slug) ?? 0) + 1);
+    return ['default', ...slugs.filter(s => s !== 'default' && counts.get(s) === 1)]
+      .filter(v => v.startsWith(match[2])).map(v => match[1] + v);
   }
   let candidates: string[] = [];
+  if (command === 'themes' && !args.length) candidates = ['refresh'];
   if (command === 'boot' || command === 'open' || command === 'load') {
     if (args.some((value) => value.startsWith('-') && value !== '--embed') || args.filter((value) => value === '--embed').length > 1) return [];
     const values = args.filter((value) => value !== '--embed');

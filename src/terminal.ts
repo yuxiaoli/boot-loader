@@ -13,8 +13,6 @@ import { mountCatalogControls, type CatalogLoader } from './terminal-catalog-con
 export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader): () => void {
   const loading = document.querySelector<HTMLElement>('#terminal-loading');
   if (loading) loading.hidden = true;
-  const catalogRoot = catalogueLoader ? document.createElement('section') : null;
-  if (catalogRoot) { catalogRoot.className = 'terminal-catalog'; host.before(catalogRoot); }
   initializeTerminalHeight(host);
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const reducedMotion = motion.matches;
@@ -42,9 +40,10 @@ export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader
   input.addEventListener('compositionend', () => { composing = false; });
   let line = '';
   let cursor = 0;
-  const history = new CommandHistory();
+  let history = new CommandHistory();
   const completion = new CompletionCycle();
-  const session = new TerminalSession(new URL(import.meta.env.BASE_URL, location.origin).href);
+  const createSession = () => new TerminalSession(new URL(import.meta.env.BASE_URL, location.origin).href);
+  let session = createSession();
   const maxLength = () => 2200;
   const completionContext = () => ({ cwd: session.cwd, variableNames: [...session.variables.keys()], themeIds: session.themes.map(t => t.id), themeNames: session.themes.map(t => t.name) });
   const writePrompt = () => term.write(session.prompt);
@@ -58,11 +57,29 @@ export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader
     term.write('\r\n');
     history.add(line.trim());
     const result = executeCommand(line, session);
+    if (result.reboot) {
+      const themes = session.themes;
+      session = createSession(); session.themes = themes;
+      history = new CommandHistory();
+      term.write('\x1b[2J\x1b[3J\x1b[H');
+      reset(); writeBanner(); writePrompt();
+      return;
+    }
     if (result.themeId) {
       if (catalogControls) catalogControls.select(result.themeId);
       else { const preset = terminalThemes[result.themeId]; if(preset) { term.options.theme = preset.theme; if(themeControl) themeControl.value = result.themeId; } }
     }
     if (result.refit) { initializeTerminalHeight(host, true); fit.fit(); }
+    if (result.refreshThemes && !catalogControls) result.lines = ['Theme catalogue is unavailable.'];
+    else if (result.refreshThemes && catalogControls) {
+      const initiatingSession = session;
+      void catalogControls.refresh().then(success => {
+        if (session !== initiatingSession || success === null) return;
+        term.write('\r\x1b[2K');
+        term.writeln(success ? 'Theme catalogue refreshed.' : 'Theme catalogue refresh failed; retaining available themes.');
+        redraw();
+      });
+    }
     if (result.clear) term.write('\x1b[2J\x1b[3J\x1b[H');
     result.lines.forEach((output) => term.writeln(output));
     reset();
@@ -70,9 +87,12 @@ export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader
     if (result.navigate) window.location.assign(result.navigate);
     if (result.screen) openComputer(result.screen, host.querySelector('textarea') ?? undefined);
   };
-  term.writeln(`Boot Loader [Version ${version}]`);
-  term.writeln('Copyright (c) Vector Index. All rights reserved.');
-  term.writeln('');
+  const writeBanner = () => {
+    term.writeln(`Boot Loader [Version ${version}]`);
+    term.writeln('Copyright (c) Vector Index. All rights reserved.');
+    term.writeln('');
+  };
+  writeBanner();
   writePrompt();
   term.attachCustomKeyEventHandler((event) => {
     if (event.isComposing || composing || event.keyCode === 229) return false;
@@ -113,6 +133,13 @@ export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader
   });
   const fontControl = document.querySelector<HTMLSelectElement>('#terminal-font-size');
   const themeControl = document.querySelector<HTMLSelectElement>('#terminal-theme');
+  let catalogRoot: HTMLElement | null = null;
+  if (catalogueLoader && themeControl?.parentElement) {
+    const slot = document.createElement('span'); slot.className = 'terminal-theme-slot';
+    themeControl.before(slot); slot.append(themeControl);
+    themeControl.setAttribute('aria-hidden', 'true'); themeControl.tabIndex = -1;
+    catalogRoot = document.createElement('span'); slot.append(catalogRoot);
+  }
   if (fontControl) {
     fontControl.disabled = false;
     fontControl.value = String(term.options.fontSize);
@@ -126,7 +153,7 @@ export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader
   const catalogControls = catalogRoot && catalogueLoader ? mountCatalogControls(catalogRoot, catalogueLoader, theme => {
     term.options.theme = theme ?? terminalThemes[themeControl?.value ?? 'green']?.theme ?? terminalTheme;
   }, themes => { session.themes = themes; completion.reset(); }) : null;
-  if (themeControl) { themeControl.disabled = false; if(catalogControls) themeControl.closest('label')!.hidden = true; }
+  if (themeControl) themeControl.disabled = false;
   themeControl?.addEventListener('change', () => {
     const preset = terminalThemes[themeControl.value];
     if (preset) { term.options.theme = preset.theme; catalogControls?.useBuiltin(themeControl.value); }

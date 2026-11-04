@@ -12,27 +12,28 @@ export function mountCatalogControls(root: HTMLElement, load: CatalogLoader, app
   changed: (themes: ThemeChoice[]) => void = () => {}) {
   const session = new CatalogSession(Object.keys(terminalThemes));
   let offset = 0, active = -1, builtinId = 'green';
-  let disposed = false, expanded = false, loading = true;
+  let appliedCatalogId: string | null = null;
+  let disposed = false, expanded = false, loading = true, generation = 0;
   const pageSize = 50, id = `terminal-themes-${++nextControlId}`;
   root.classList.add('terminal-catalog');
   root.setAttribute('aria-label', 'Terminal theme catalogue');
-  const label = document.createElement('label'); label.textContent = 'Theme ';
   const search = document.createElement('input');
   search.type = 'search'; search.setAttribute('aria-label', 'Search terminal themes');
   search.setAttribute('role', 'combobox'); search.setAttribute('aria-autocomplete', 'list');
   search.setAttribute('aria-controls', id); search.autocomplete = 'off';
-  search.placeholder = 'Search themes'; label.append(search);
+  search.placeholder = 'Search themes';
   const list = document.createElement('div'); list.id = id; list.setAttribute('role', 'listbox');
   list.setAttribute('aria-label', 'Terminal themes');
   const previous = document.createElement('button'); previous.type = 'button'; previous.textContent = 'Previous';
   const next = document.createElement('button'); next.type = 'button'; next.textContent = 'Next';
-  const refresh = document.createElement('button'); refresh.type = 'button'; refresh.textContent = 'Refresh catalogue';
-  const fallback = document.createElement('button'); fallback.type = 'button'; fallback.textContent = 'Use built-in theme';
   const status = document.createElement('p'); status.id = `${id}-status`; status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
-  const attribution = document.createElement('p'); attribution.id = `${id}-selected`; search.setAttribute('aria-describedby', `${status.id} ${attribution.id}`); attribution.className = 'terminal-catalog-source';
+  const attribution = document.createElement('p'); attribution.className = 'terminal-catalog-source';
+  const selectedDescription = document.createElement('span'); selectedDescription.id = `${id}-selected`; selectedDescription.className = 'terminal-catalog-selected';
+  search.setAttribute('aria-describedby', `${selectedDescription.id} ${status.id}`);
   const navigation = document.createElement('div'); navigation.className = 'terminal-catalog-navigation';
-  navigation.append(previous, next, refresh, fallback);
-  root.append(label, list, navigation, status, attribution);
+  navigation.append(previous, next);
+  const panel = document.createElement('div'); panel.className = 'terminal-catalog-panel';
+  panel.append(list, navigation, status, attribution); root.append(search, selectedDescription, panel);
   const listeners: (()=>void)[] = [];
   function on(target: HTMLElement, event: string, listener: (event: Event)=>void) {
     target.addEventListener(event, listener); listeners.push(()=>target.removeEventListener(event, listener));
@@ -50,18 +51,29 @@ export function mountCatalogControls(root: HTMLElement, load: CatalogLoader, app
   function select(id: string): boolean {
     if (disposed) return false;
     if (Object.hasOwn(terminalThemes, id)) {
-      builtinId = id; session.selectedId = null; apply(terminalThemes[id].theme);
-    } else if (session.select(id)) apply(session.current!.themes.find(t=>t.id===id)!.theme);
+      builtinId = id; session.selectedId = null; appliedCatalogId = null; apply(terminalThemes[id].theme);
+    } else if (session.select(id)) { appliedCatalogId = id; apply(session.current!.themes.find(t=>t.id===id)!.theme); }
     else return false;
     close(); return true;
+  }
+  function positionPanel() {
+    if (!expanded) return;
+    const rect = root.getBoundingClientRect();
+    const width = Math.max(0, Math.min(360, window.innerWidth - 24));
+    panel.style.width = width + 'px';
+    panel.style.left = Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12)) + 'px';
+    const top = Math.max(12, Math.min(rect.bottom + 4, window.innerHeight - 120));
+    panel.style.top = top + 'px';
+    panel.style.maxHeight = Math.max(0, Math.min(300, window.innerHeight - top - 12)) + 'px';
   }
   function draw() {
     if (disposed) return;
     const all = matches(), page = all.slice(offset, offset + pageSize);
     if (active >= page.length) active = page.length - 1;
-    list.replaceChildren(); list.hidden = !expanded;
+    list.replaceChildren(); panel.hidden = !expanded; positionPanel();
     search.setAttribute('aria-expanded', String(expanded));
     search.placeholder = choices().find(t => t.id === selectedId())?.name ?? 'Search themes';
+    selectedDescription.textContent = `Selected theme: ${choices().find(t => t.id === selectedId())?.name ?? selectedId()}.`;
     search.removeAttribute('aria-activedescendant');
     page.forEach((theme, i) => {
       const option = document.createElement('div'); option.id = `${id}-${i}`;
@@ -74,7 +86,6 @@ export function mountCatalogControls(root: HTMLElement, load: CatalogLoader, app
     });
     previous.hidden = next.hidden = !expanded;
     previous.disabled = offset === 0; next.disabled = offset + pageSize >= all.length;
-    refresh.disabled = loading;
     const catalog = session.current;
     const range = `${all.length ? offset + 1 : 0}–${Math.min(offset + pageSize, all.length)} of ${all.length} matches.`;
     status.textContent = `${range} ${loading ? 'Loading catalogue. ' : ''}${catalog ? `${catalog.themes.length} compatible catalogue themes; ${catalog.excluded.length} excluded. Source ${catalog.status}; revision ${catalog.revision}. ` : ''}${session.error ? `Catalogue unavailable: ${session.error}. ${catalog ? 'Retaining last-good catalogue. ' : ''}` : ''}${!catalog ? 'Built-in themes remain available.' : ''}`;
@@ -86,21 +97,24 @@ export function mountCatalogControls(root: HTMLElement, load: CatalogLoader, app
     } else attribution.textContent = `Using the built-in theme: ${terminalThemes[builtinId].label}. Theme changes preserve commands and history.`;
   }
   async function reload() {
+    if (disposed) return null;
+    const request = ++generation;
     loading = true; draw();
-    const oldSelection = session.selectedId;
     const success = await session.refresh(load);
-    if (disposed) return;
+    if (disposed || request !== generation) return null;
     loading = false;
     if (success) {
       offset = 0; active = -1;
-      if (session.selectedId) apply(session.current!.themes.find(t=>t.id===session.selectedId)!.theme);
-      else if (oldSelection) apply(terminalThemes[builtinId].theme);
+      if (session.selectedId) { appliedCatalogId = session.selectedId; apply(session.current!.themes.find(t=>t.id===session.selectedId)!.theme); }
+      else if (appliedCatalogId) { appliedCatalogId = null; apply(terminalThemes[builtinId].theme); }
       changed(choices());
     }
     draw();
+    return success;
   }
   on(search, 'input', ()=>{offset=0;active=-1;expanded=true;draw();});
   on(search, 'focus', ()=>{expanded=true;draw();});
+  on(search, 'click', ()=>{if(!expanded){expanded=true;draw();}});
   on(search, 'keydown', event=>{
     const e = event as KeyboardEvent;
     if (e.key === 'Escape') { e.preventDefault(); close(); return; }
@@ -123,9 +137,11 @@ export function mountCatalogControls(root: HTMLElement, load: CatalogLoader, app
   on(root, 'focusout', event=>{if(!root.contains((event as FocusEvent).relatedTarget as Node | null)) close();});
   on(previous, 'click', ()=>{offset=Math.max(0,offset-pageSize);active=-1;draw();});
   on(next, 'click', ()=>{offset+=pageSize;active=-1;draw();});
-  on(fallback, 'click', ()=>{select(builtinId);});
-  on(refresh, 'click', ()=>{void reload();});
+  window.addEventListener('resize', positionPanel);
+  window.addEventListener('scroll', positionPanel, true);
+  listeners.push(()=>window.removeEventListener('resize', positionPanel));
+  listeners.push(()=>window.removeEventListener('scroll', positionPanel, true));
   changed(choices()); draw(); void reload();
-  return { select, choices, dispose() {disposed=true;listeners.forEach(remove=>remove());root.remove();},
-    useBuiltin(id = 'green') {if(Object.hasOwn(terminalThemes,id)){builtinId=id;session.selectedId=null;draw();}} };
+  return { select, choices, refresh: reload, dispose() {disposed=true;listeners.forEach(remove=>remove());root.remove();},
+    useBuiltin(id = 'green') {if(Object.hasOwn(terminalThemes,id)){builtinId=id;session.selectedId=null;appliedCatalogId=null;draw();}} };
 }
