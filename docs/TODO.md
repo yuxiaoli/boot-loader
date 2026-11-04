@@ -19,3 +19,7 @@ One combined request, recorded on 2026-11-03:
 Existing technical artifact: [prompt-only PR #14](https://github.com/yuxiaoli/boot-loader/pull/14), head `fcd148b1e94df2083d9d75b62e6517f303872eb1`. Its 72-test aggregate check, independent bounded review and CI passed. It remains a draft pending release authorization; it is part of this combined to-do, not a separate task or a claim of live delivery.
 
 Do not include the footer word-wrap issue. This entry records the requested work; it does not authorize premature implementation or release of the new combined scope.
+
+### 2026-11-04 update
+
+The combined follow-up was delivered through PR #14 at merge commit `54f64314ce0aa5afc12da2013d3b49f30115092f`. The user initially requested that `reboot` reload the page, then clarified that `reboot` should retain its existing fresh-terminal behavior and a separate `reload` command should refresh the page. This latest correction is pending delivery through the normal review and deployment workflow.

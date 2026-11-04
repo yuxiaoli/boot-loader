@@ -1,7 +1,7 @@
 import { destinations, findDestination } from './destinations';
 import { themeSlug, virtualPathCompletions } from './commands';
 
-const commands = ['about', 'boot', 'cat', 'cd', 'clear', 'cls', 'cwd', 'echo', 'help', 'intro', 'ls', 'open', 'pwd', 'reboot', 'refit', 'set', 'source', 'theme', 'themes', 'time'];
+const commands = ['about', 'boot', 'cat', 'cd', 'clear', 'cls', 'cwd', 'echo', 'help', 'intro', 'ls', 'open', 'pwd', 'reboot', 'refit', 'reload', 'set', 'source', 'theme', 'themes', 'time'];
 export function complete(line: string, variableNames: string[] = [], cwd = '/systems', themeIds: string[] = [], themeNames: string[] = []): string[] {
   if (!line.trim()) return [];
   const start = line.search(/\S*$/);

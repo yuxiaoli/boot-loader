@@ -4,7 +4,7 @@ import { terminalThemes } from './terminal-appearance';
 
 export type ScreenRequest = { url: string; label: string; kind: 'registry' | 'custom'; directOnly?: string };
 export function themeSlug(name: string): string { return name.trim().toLowerCase().replace(/\s+/g, '-'); }
-export type CommandResult = { lines: string[]; navigate?: string; screen?: ScreenRequest; clear?: boolean; themeId?: string; refit?: boolean; refreshThemes?: boolean; reboot?: boolean };
+export type CommandResult = { lines: string[]; navigate?: string; screen?: ScreenRequest; clear?: boolean; themeId?: string; refit?: boolean; refreshThemes?: boolean; reboot?: boolean; reload?: boolean };
 type Node = { kind: 'directory' } | { kind: 'file'; lines: string[] };
 
 export const introLines = [
@@ -62,6 +62,7 @@ export const helpLines = [
   '  theme <slug>     Apply a theme (Tab completes slugs)',
   '  theme default    Restore the built-in theme',
   '  reboot           Start a fresh terminal session',
+  '  reload           Reload the current page',
   '  refit            Fit terminal to current viewport',
   '  source [system]  Show sources or open one',
   '  clear / cls      Clear the display',
@@ -169,6 +170,7 @@ export function executeCommand(input: string, session = new TerminalSession()): 
   }
   if (command === 'refit') return args.length ? { lines: ['Usage: refit'] } : { lines: ['Terminal fitted to the current viewport.'], refit: true };
   if (command === 'reboot') return args.length ? { lines: ['Usage: reboot'] } : { lines: [], reboot: true };
+  if (command === 'reload') return args.length ? { lines: ['Usage: reload'] } : { lines: [], reload: true };
   if (command === 'help') return { lines: args.length ? ['Usage: help'] : helpLines };
   if (command === 'clear' || command === 'cls') return args.length ? { lines: ['Usage: clear'] } : { lines: [], clear: true };
   if (command === 'pwd' || command === 'cwd') return { lines: args.length ? [`Usage: ${command}`] : [session.cwd] };

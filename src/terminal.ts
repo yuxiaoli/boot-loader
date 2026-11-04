@@ -57,6 +57,7 @@ export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader
     term.write('\r\n');
     history.add(line.trim());
     const result = executeCommand(line, session);
+    if (result.reload) { window.location.reload(); return; }
     if (result.reboot) {
       const themes = session.themes;
       session = createSession(); session.themes = themes;
