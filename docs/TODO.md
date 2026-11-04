@@ -23,3 +23,11 @@ Do not include the footer word-wrap issue. This entry records the requested work
 ### 2026-11-04 update
 
 The combined follow-up was delivered through PR #14 at merge commit `54f64314ce0aa5afc12da2013d3b49f30115092f`. The user initially requested that `reboot` reload the page, then clarified that `reboot` should retain its existing fresh-terminal behavior and a separate `reload` command should refresh the page. This latest correction is pending delivery through the normal review and deployment workflow.
+
+## Roadmap idea — JSON-configured terminal commands
+
+Status: idea recorded for future consideration; implementation is not started.
+
+Explore dynamically loading a JSON configuration that defines command names and their underlying JavaScript behavior, with results formatted for display in xterm.js. Simple browser commands such as `time` and `reload` are candidates. The configuration should also support static string responses, such as configured text for `about` and `intro`.
+
+More complex commands, such as theme selection, would remain implemented in code. An open safety design question is whether the configuration should refer to declaratively registered handlers or allow arbitrary JavaScript evaluation; this choice has not been settled.
