@@ -1,14 +1,17 @@
 import { destinations, findDestination } from './destinations';
-import { themeSlug, virtualPathCompletions } from './commands';
+import { codeOwnedCommandNames, themeSlug, virtualPathCompletions } from './commands';
+import { defaultCommandCatalog, type CommandCatalog } from './command-catalog';
 
-const commands = ['about', 'boot', 'cat', 'cd', 'clear', 'cls', 'cwd', 'echo', 'help', 'intro', 'ls', 'open', 'pwd', 'reboot', 'refit', 'reload', 'set', 'source', 'theme', 'themes', 'time'];
-export function complete(line: string, variableNames: string[] = [], cwd = '/systems', themeIds: string[] = [], themeNames: string[] = []): string[] {
+export function complete(line: string, variableNames: string[] = [], cwd = '/systems', themeIds: string[] = [], themeNames: string[] = [], catalog: CommandCatalog = defaultCommandCatalog): string[] {
   if (!line.trim()) return [];
   const start = line.search(/\S*$/);
   const head = line.slice(0, start);
   const token = line.slice(start);
   const previous = head.trim().split(/\s+/).filter(Boolean);
-  if (!previous.length) return commands.filter((value) => value.startsWith(token.toLowerCase())).map((value) => head + value);
+  if (!previous.length) {
+    const names = [...codeOwnedCommandNames, ...catalog.commands.map((item) => item.name)].sort();
+    return names.filter((value) => value.startsWith(token.toLowerCase())).map((value) => head + value);
+  }
   const command = previous[0].toLowerCase();
   const args = previous.slice(1);
   if (command === 'theme') {
@@ -34,18 +37,18 @@ export function complete(line: string, variableNames: string[] = [], cwd = '/sys
 }
 
 type CompletionEdit = { line: string; cursor: number };
-type CompletionContext = { cwd?: string; variableNames?: string[]; themeIds?: string[]; themeNames?: string[] };
+type CompletionContext = { cwd?: string; variableNames?: string[]; themeIds?: string[]; themeNames?: string[]; catalog?: CommandCatalog };
 
 /** A cycle belongs to the original prefix until input, caret or context changes. */
 export class CompletionCycle {
-  private active?: { key: string; edits: CompletionEdit[]; index: number; result: CompletionEdit };
+  private active?: { key: string; catalog: CommandCatalog; edits: CompletionEdit[]; index: number; result: CompletionEdit };
   reset(): void { this.active = undefined; }
   private key(context: CompletionContext): string { return JSON.stringify([context.cwd ?? '/systems', context.variableNames ?? [], context.themeIds ?? [], context.themeNames ?? []]); }
   private current(line: string, cursor: number, context: CompletionContext): boolean {
-    return !!this.active && this.active.key === this.key(context) && this.active.result.line === line && this.active.result.cursor === cursor;
+    return !!this.active && this.active.catalog === (context.catalog ?? defaultCommandCatalog) && this.active.key === this.key(context) && this.active.result.line === line && this.active.result.cursor === cursor;
   }
   canComplete(line: string, cursor: number, context: CompletionContext): boolean {
-    return this.current(line, cursor, context) || complete(line.slice(0, cursor), context.variableNames, context.cwd, context.themeIds, context.themeNames).length > 0;
+    return this.current(line, cursor, context) || complete(line.slice(0, cursor), context.variableNames, context.cwd, context.themeIds, context.themeNames, context.catalog).length > 0;
   }
   next(line: string, cursor: number, context: CompletionContext, direction: -1 | 1 = 1): CompletionEdit | undefined {
     if (this.current(line, cursor, context)) {
@@ -54,10 +57,10 @@ export class CompletionCycle {
       active.result = active.edits[active.index];
       return { ...active.result };
     }
-    const edits = complete(line.slice(0, cursor), context.variableNames, context.cwd, context.themeIds, context.themeNames).map((value) => ({ line: value + line.slice(cursor), cursor: value.length }));
+    const edits = complete(line.slice(0, cursor), context.variableNames, context.cwd, context.themeIds, context.themeNames, context.catalog).map((value) => ({ line: value + line.slice(cursor), cursor: value.length }));
     if (!edits.length) { this.reset(); return; }
     const index = direction === 1 ? 0 : edits.length - 1;
-    this.active = { key: this.key(context), edits, index, result: edits[index] };
+    this.active = { key: this.key(context), catalog: context.catalog ?? defaultCommandCatalog, edits, index, result: edits[index] };
     return { ...edits[index] };
   }
 }

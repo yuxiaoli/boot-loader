@@ -1,82 +1,70 @@
 import { destinations, findDestination, repositoryUrl } from './destinations';
 import { validateLoadUrl } from './load-url';
 import { terminalThemes } from './terminal-appearance';
+import { defaultCommandCatalog, type CommandCatalog } from './command-catalog';
 
 export type ScreenRequest = { url: string; label: string; kind: 'registry' | 'custom'; directOnly?: string };
 export function themeSlug(name: string): string { return name.trim().toLowerCase().replace(/\s+/g, '-'); }
 export type CommandResult = { lines: string[]; navigate?: string; screen?: ScreenRequest; clear?: boolean; themeId?: string; refit?: boolean; refreshThemes?: boolean; reboot?: boolean; reload?: boolean };
 type Node = { kind: 'directory' } | { kind: 'file'; lines: string[] };
 
-export const introLines = [
-  'Welcome. Curiosity has a desktop now.',
-  '',
-  "I'm Sean. Welcome to Boot Loader's browser terminal.",
-  'Explore browser desktops from a simulated shell.',
-  'No real shell commands or host files are accessed.',
-  '',
-  'Start here:',
-  '  ls               See the available systems',
-  '  boot win11       Open Windows 11 in this tab',
-  '  boot win11 --embed  Try it in the computer screen',
-  'Some systems need a direct tab instead.',
-  '',
-  'Use Tab to complete commands; Up/Down for history.',
-  'Press Esc to discard input without running it.',
-  'Type help for commands or about for the story.',
-];
+function defaultText(name: 'intro' | 'about'): string[] {
+  const command = defaultCommandCatalog.commands.find((item) => item.name === name);
+  return command?.kind === 'text' ? [...command.lines] : [];
+}
+export const introLines = defaultText('intro');
+export const aboutLines = defaultText('about');
 
-export const aboutLines = [
-  'About Boot Loader',
-  '',
-  'Built by Sean. A browser pretending to be somewhere',
-  'else, built on the work of open-source communities.',
-  'Boot Loader brings browser desktops together with',
-  'a visual selector and a simulated terminal.',
-  '',
-  "The interesting part isn't making pixels look like",
-  "an operating system. It's seeing how much of the",
-  'experience lives in the details.',
-  '',
-  'Keep exploring: https://vectorindex.cloud',
-  `Boot Loader source: ${repositoryUrl}`,
-  'Type source for the individual system projects.',
-  'Type intro to get started or help for commands.',
+// Each code-owned help row also declares its completion-visible names. The
+// accepted `load` alias stays deliberately absent from both surfaces.
+const helpRows: ReadonlyArray<{ line: string; names?: readonly string[]; configured?: string }> = [
+  { line: 'A simulated shell. No real files or commands.' },
+  { line: '', configured: 'intro' },
+  { line: '', configured: 'about' },
+  { line: '  ls [path]        List virtual contents', names: ['ls'] },
+  { line: '  pwd / cwd        Show the virtual directory', names: ['pwd', 'cwd'] },
+  { line: '  cd [path]        Change directory (home: /systems)', names: ['cd'] },
+  { line: '  cat <path>       Read a virtual text file', names: ['cat'] },
+  { line: '  echo <text>      Print literal text', names: ['echo'] },
+  { line: '  boot <system>    Open a system in this tab', names: ['boot'] },
+  { line: '  open <URL|$name> Open a webpage in this tab', names: ['open'] },
+  { line: '    --embed        Use the computer screen instead' },
+  { line: '  set name=<URL>   Save a session-only URL', names: ['set'] },
+  { line: '', configured: 'time' },
+  { line: '  themes [search]  List available terminal themes', names: ['themes'] },
+  { line: '  themes refresh   Reload the theme catalogue' },
+  { line: '  theme <slug>     Apply a theme (Tab completes slugs)', names: ['theme'] },
+  { line: '  theme default    Restore the built-in theme' },
+  { line: '  reboot           Start a fresh terminal session', names: ['reboot'] },
+  { line: '', configured: 'reload' },
+  { line: '  refit            Fit terminal to current viewport', names: ['refit'] },
+  { line: '  source [system]  Show sources or open one', names: ['source'] },
+  { line: '  clear / cls      Clear the display', names: ['clear', 'cls'] },
+  { line: '  help             Show this guide', names: ['help'] },
+  { line: '' },
+  { line: 'Try: ls | cd .. | cat README.txt | boot win11' },
+  { line: `Systems: ${destinations.map((os) => os.id).join(', ')}` },
+  { line: 'set home=https://example.com then open $home' },
+  { line: 'Variable names: lowercase a-z, digits, underscore;' },
+  { line: 'start with a letter. Names are case-sensitive.' },
+  { line: 'Up/Down: history | Ctrl+C: cancel' },
+  { line: 'Tab: cycle matches | Shift+Tab: reverse' },
+  { line: 'Empty or unmatched Tab leaves the terminal.' },
 ];
+export const codeOwnedCommandNames = Object.freeze(helpRows.flatMap((row) => row.names ?? []));
 
-export const helpLines = [
-  'A simulated shell. No real files or commands.',
-  '  intro            Welcome and getting started',
-  '  about            Project background and author',
-  '  ls [path]        List virtual contents',
-  '  pwd / cwd        Show the virtual directory',
-  '  cd [path]        Change directory (home: /systems)',
-  '  cat <path>       Read a virtual text file',
-  '  echo <text>      Print literal text',
-  '  boot <system>    Open a system in this tab',
-  '  open <URL|$name> Open a webpage in this tab',
-  '    --embed        Use the computer screen instead',
-  '  set name=<URL>   Save a session-only URL',
-  '  time             Local time and browser time zone',
-  '  themes [search]  List available terminal themes',
-  '  themes refresh   Reload the theme catalogue',
-  '  theme <slug>     Apply a theme (Tab completes slugs)',
-  '  theme default    Restore the built-in theme',
-  '  reboot           Start a fresh terminal session',
-  '  reload           Reload the current page',
-  '  refit            Fit terminal to current viewport',
-  '  source [system]  Show sources or open one',
-  '  clear / cls      Clear the display',
-  '  help             Show this guide',
-  '',
-  'Try: ls | cd .. | cat README.txt | boot win11',
-  `Systems: ${destinations.map((os) => os.id).join(', ')}`,
-  'set home=https://example.com then open $home',
-  'Variable names: lowercase a-z, digits, underscore;',
-  'start with a letter. Names are case-sensitive.',
-  'Up/Down: history | Ctrl+C: cancel',
-  'Tab: cycle matches | Shift+Tab: reverse',
-  'Empty or unmatched Tab leaves the terminal.',
-];
+function effectiveHelpLines(catalog: CommandCatalog): string[] {
+  const builtins = new Set(['intro', 'about', 'time', 'reload']);
+  const format = (name: string, description: string) => `  ${name}${' '.repeat(Math.max(1, 17 - name.length))}${description}`;
+  const lines = helpRows.map((row) => {
+    const configured = row.configured && catalog.commands.find((item) => item.name === row.configured);
+    return configured ? format(configured.name, configured.description) : row.line;
+  });
+  const extras = catalog.commands.filter((item) => !builtins.has(item.name)).map((item) => format(item.name, item.description));
+  lines.splice(lines.indexOf('  help             Show this guide') + 1, 0, ...extras);
+  return lines;
+}
+export const helpLines = effectiveHelpLines(defaultCommandCatalog);
 
 const readme = [
   'Boot Loader is a simulated browser shell.',
@@ -94,7 +82,7 @@ const readme = [
 const nodes = new Map<string, Node>([
   ['/', { kind: 'directory' }], ['/systems', { kind: 'directory' }],
   ['/README.txt', { kind: 'file', lines: readme }],
-  ['/help.txt', { kind: 'file', lines: helpLines }],
+  ['/help.txt', { kind: 'file', lines: [] }],
   ...destinations.map((os): [string, Node] => [`/systems/${os.id}`, { kind: 'file', lines: [os.name, os.live, `Source: ${os.source}`, `Launch: boot ${os.id}`, `Screen: boot ${os.id} --embed`] }]),
 ]);
 
@@ -133,7 +121,7 @@ export class TerminalSession {
   cwd = '/systems';
   themes = Object.entries(terminalThemes).map(([id, t]) => ({ id, name: t.label }));
   readonly variables = new Map<string, string>();
-  constructor(readonly siteUrl = 'https://yuxiaoli.github.io/boot-loader/') {}
+  constructor(readonly siteUrl = 'https://yuxiaoli.github.io/boot-loader/', readonly catalog: CommandCatalog = defaultCommandCatalog) {}
   get prompt() { return `${this.cwd}> `; }
 }
 
@@ -144,7 +132,13 @@ export function executeCommand(input: string, session = new TerminalSession()): 
   const command = parsed[1].toLowerCase();
   const argument = parsed[2]?.trim() ?? '';
   const args = argument ? argument.split(/\s+/) : [];
-  if (command === 'intro' || command === 'about') return { lines: args.length ? [`Usage: ${command}`] : [...(command === 'intro' ? introLines : aboutLines)] };
+  const configured = session.catalog.commands.find((item) => item.name === command);
+  if (configured?.kind === 'text') return { lines: args.length ? [`Usage: ${command}`] : [...configured.lines] };
+  if (configured?.kind === 'handler') {
+    if (args.length) return { lines: [`Usage: ${command}`] };
+    if (configured.handler === 'time') return { lines: [new Date().toLocaleString(undefined, { timeZoneName: 'short' }), `Time zone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`] };
+    if (configured.handler === 'reload') return { lines: [], reload: true };
+  }
   if (command === 'themes') {
     if (argument === 'refresh') return { lines: ['Refreshing theme catalogue...'], refreshThemes: true };
     const terms = argument.toLowerCase().split(/\s+/).filter(Boolean);
@@ -170,15 +164,10 @@ export function executeCommand(input: string, session = new TerminalSession()): 
   }
   if (command === 'refit') return args.length ? { lines: ['Usage: refit'] } : { lines: ['Terminal fitted to the current viewport.'], refit: true };
   if (command === 'reboot') return args.length ? { lines: ['Usage: reboot'] } : { lines: [], reboot: true };
-  if (command === 'reload') return args.length ? { lines: ['Usage: reload'] } : { lines: [], reload: true };
-  if (command === 'help') return { lines: args.length ? ['Usage: help'] : helpLines };
+  if (command === 'help') return { lines: args.length ? ['Usage: help'] : effectiveHelpLines(session.catalog) };
   if (command === 'clear' || command === 'cls') return args.length ? { lines: ['Usage: clear'] } : { lines: [], clear: true };
   if (command === 'pwd' || command === 'cwd') return { lines: args.length ? [`Usage: ${command}`] : [session.cwd] };
   if (command === 'echo') return { lines: [argument] };
-  if (command === 'time') {
-    if (argument) return { lines: ['Usage: time'] };
-    return { lines: [new Date().toLocaleString(undefined, { timeZoneName: 'short' }), `Time zone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`] };
-  }
   if (command === 'set') {
     const assignment = /^([a-z][a-z0-9_]{0,31})=(\S+)$/.exec(argument);
     if (!assignment || ['constructor', 'prototype', '__proto__'].includes(assignment[1])) return { lines: ['Usage: set name=<URL> (lowercase names, up to 32 characters).'] };
@@ -220,7 +209,7 @@ export function executeCommand(input: string, session = new TerminalSession()): 
       if (node.kind !== 'directory') return { lines: ['Not a directory.'] };
       session.cwd = path; return { lines: [] };
     }
-    if (command === 'cat') return { lines: node.kind === 'file' ? [...node.lines] : ['Is a directory. Use ls to list it.'] };
+    if (command === 'cat') return { lines: node.kind === 'file' ? (path === '/help.txt' ? effectiveHelpLines(session.catalog) : [...node.lines]) : ['Is a directory. Use ls to list it.'] };
     if (node.kind === 'file') return { lines: [path.split('/').at(-1)!] };
     if (path === '/systems') return { lines: destinations.map((os) => `  ${os.id.padEnd(10)} ${os.name}`) };
     return { lines: ['  systems/', '  README.txt', '  help.txt'] };

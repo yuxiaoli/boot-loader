@@ -1,4 +1,4 @@
-import { readFile, access } from 'node:fs/promises';
+import { readFile, access, readdir } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import { destinations } from '../src/destinations.ts';
@@ -32,3 +32,12 @@ for (const route of routes) {
 const home = await readFile('dist/index.html', 'utf8');
 assert.match(home, /id="terminal"[\s\S]*<\/section><\/main>/, 'home terminal is last');
 console.log(`PASS exact revision ${version.commit}; home terminal is the last section`);
+
+const assets = await readdir('dist/assets');
+const commandAssets = assets.filter(name => /^command-catalog-[A-Za-z0-9_-]+\.json$/.test(name));
+assert.equal(commandAssets.length, 1, 'one content-hashed command catalogue asset');
+const asset = commandAssets[0];
+assert.equal(await readFile(join('dist/assets', asset), 'utf8'), await readFile('src/command-catalog.json', 'utf8'), 'catalogue asset matches bundled source');
+const scripts = await Promise.all(assets.filter(name => name.endsWith('.js')).map(name => readFile(join('dist/assets', name), 'utf8')));
+assert.ok(scripts.some(script => script.includes(`${base}assets/${asset}`)), 'built script references catalogue at repository base');
+console.log(`PASS same-release command catalogue ${base}assets/${asset}`);

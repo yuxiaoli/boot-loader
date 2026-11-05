@@ -23,8 +23,24 @@ vi.mock('@xterm/xterm', () => ({ Terminal: class {
 vi.mock('@xterm/addon-fit', () => ({ FitAddon: class { fit() {} } }));
 vi.mock('../src/screen-session', () => ({ openComputer: vi.fn() }));
 import { mountTerminal } from '../src/terminal';
+import { defaultCommandCatalog, parseCommandCatalog } from '../src/command-catalog';
 
 afterEach(() => { vi.unstubAllGlobals(); handlers.output.length = 0; });
+
+test('reboot retains the selected command catalogue for the new terminal session', () => {
+  const fixture = JSON.parse(JSON.stringify(defaultCommandCatalog));
+  fixture.commands.find((command: {name: string}) => command.name === 'about').lines = ['Configured response'];
+  const commands = parseCommandCatalog(JSON.stringify(fixture));
+  const input = { setAttribute() {}, addEventListener() {} };
+  vi.stubGlobal('document', { querySelector: () => null });
+  vi.stubGlobal('window', { innerWidth: 1280, matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }), addEventListener() {} });
+  vi.stubGlobal('location', { origin: 'http://localhost' });
+  vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+  mountTerminal({ querySelector: () => input, closest: () => null } as unknown as HTMLElement, undefined, commands);
+  handlers.data!('reboot'); handlers.data!('\r');
+  handlers.data!('about'); handlers.data!('\r');
+  expect(handlers.output).toContain('Configured response\r\n');
+});
 
 test('matching Tab and Shift+Tab retain terminal focus while empty, unmatched and outside Tab remain native', () => {
   const input = { setAttribute() {}, addEventListener() {} };
