@@ -1,7 +1,12 @@
 import { expect, test } from 'vitest';
-import { executeCommand, TerminalSession } from '../src/commands';
+import { codeOwnedCommandNames, executeCommand, TerminalSession } from '../src/commands';
 import { complete, CompletionCycle } from '../src/editor';
 import { renderPage } from '../src/render';
+import { defaultCommandCatalog, parseCommandCatalog } from '../src/command-catalog';
+
+function catalogueWithGreeting() {
+  return parseCommandCatalog(JSON.stringify({ version: 1, commands: [...defaultCommandCatalog.commands, { name: 'greeting', kind: 'text', lines: ['Hello'], description: 'Say hello' }] }));
+}
 
 test('intro offers safe first steps while about gives the approved public project story', () => {
   const intro = executeCommand('intro').lines.join('\n');
@@ -57,4 +62,43 @@ test('help and both terminal routes expose intro/about without replacing the com
   expect(new CompletionCycle().next('in', 2, {}, -1)).toEqual({ line: 'intro', cursor: 5 });
   expect(executeCommand('github').lines[0]).toContain('Unknown command');
   expect(executeCommand('linkedin').lines[0]).toContain('Unknown command');
+});
+
+test('a session dispatches an additional static command from its catalogue', () => {
+  const catalog = catalogueWithGreeting();
+  const session = new TerminalSession(undefined, catalog);
+  expect(executeCommand('GREETING', session)).toEqual({ lines: ['Hello'] });
+  expect(executeCommand('greeting extra', session)).toEqual({ lines: ['Usage: greeting'] });
+  executeCommand('greeting', session).lines.push('mutated');
+  expect(executeCommand('greeting', session).lines).toEqual(['Hello']);
+});
+
+test('configured command descriptions appear in both help and the virtual help file', () => {
+  const catalog = catalogueWithGreeting();
+  const session = new TerminalSession(undefined, catalog);
+  const help = executeCommand('help', session).lines;
+  expect(help.join('\n')).toContain('greeting');
+  expect(help.join('\n')).toContain('Say hello');
+  expect(executeCommand('cat /help.txt', session).lines).toEqual(help);
+});
+
+test('command completion uses the same session catalogue', () => {
+  const catalog = catalogueWithGreeting();
+  expect(complete('gre', [], '/systems', [], [], catalog)).toEqual(['greeting']);
+  expect(new CompletionCycle().next('gre!', 3, { catalog })).toEqual({line:'greeting!', cursor:8});
+});
+
+test('completion cycles are invalidated when the immutable catalogue snapshot changes', () => {
+  const catalog = catalogueWithGreeting();
+  const other = parseCommandCatalog(JSON.stringify({ version: 1, commands: [...catalog.commands, { name: 'greetings', kind: 'text', lines: ['Hi'], description: 'Say hi' }] }));
+  const cycle = new CompletionCycle();
+  expect(cycle.next('gre', 3, { catalog: other })).toEqual({line:'greeting', cursor:8});
+  expect(cycle.next('greeting', 8, { catalog })).toEqual({line:'greeting', cursor:8});
+});
+
+test('the validator rejects collisions for every code-owned help/completion name and hidden alias', () => {
+  for (const name of [...codeOwnedCommandNames, 'load']) {
+    const duplicate = { name, kind: 'text', lines: ['shadow'], description: 'shadow' };
+    expect(() => parseCommandCatalog(JSON.stringify({ version: 1, commands: [...defaultCommandCatalog.commands, duplicate] })), name).toThrow();
+  }
 });

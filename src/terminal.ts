@@ -7,10 +7,16 @@ import { terminalTheme, terminalThemes, terminalFontSizes, initializeTerminalHei
 import { openComputer } from './screen-session';
 import { version } from '../package.json';
 import { mountCatalogControls, type CatalogLoader } from './terminal-catalog-controls';
+import commandCatalogUrl from './command-catalog.json?url&no-inline';
+import { defaultCommandCatalog, loadCommandCatalog, type CommandCatalog } from './command-catalog';
+
+export function loadTerminalCommandCatalog(signal?: AbortSignal): Promise<CommandCatalog> {
+  return loadCommandCatalog(commandCatalogUrl, undefined, undefined, signal);
+}
 
 // The production entry point explicitly injects the approved public API loader.
 // Tests and other callers may omit it to use built-in themes without a fetch.
-export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader): () => void {
+export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader, commands: CommandCatalog = defaultCommandCatalog): () => void {
   const loading = document.querySelector<HTMLElement>('#terminal-loading');
   if (loading) loading.hidden = true;
   initializeTerminalHeight(host);
@@ -42,10 +48,10 @@ export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader
   let cursor = 0;
   let history = new CommandHistory();
   const completion = new CompletionCycle();
-  const createSession = () => new TerminalSession(new URL(import.meta.env.BASE_URL, location.origin).href);
+  const createSession = () => new TerminalSession(new URL(import.meta.env.BASE_URL, location.origin).href, commands);
   let session = createSession();
   const maxLength = () => 2200;
-  const completionContext = () => ({ cwd: session.cwd, variableNames: [...session.variables.keys()], themeIds: session.themes.map(t => t.id), themeNames: session.themes.map(t => t.name) });
+  const completionContext = () => ({ cwd: session.cwd, variableNames: [...session.variables.keys()], themeIds: session.themes.map(t => t.id), themeNames: session.themes.map(t => t.name), catalog: commands });
   const writePrompt = () => term.write(session.prompt);
   const redraw = () => {
     const view = inputWindow(line, cursor, Math.max(1, term.cols - session.prompt.length - 1));

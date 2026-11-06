@@ -36,8 +36,14 @@ const host = document.querySelector<HTMLElement>('#terminal-host');
 if (host) {
   let requested = false;
   let pendingFocus = false;
+  let disposed = false;
+  const loadingAbort = typeof AbortController === 'function' ? new AbortController() : undefined;
+  window.addEventListener('pagehide', (event) => {
+    if (!event.persisted) { disposed = true; loadingAbort?.abort(); }
+  });
   let focusConsole: (() => void) | undefined;
   const loadConsole = async (focus = false) => {
+    if (disposed) return;
     pendingFocus ||= focus;
     if (requested) {
       if (pendingFocus && focusConsole) { focusConsole(); pendingFocus = false; }
@@ -45,13 +51,16 @@ if (host) {
     }
     requested = true;
     try {
-      const [{ mountTerminal }, { createPopularTerminalLoader }] = await Promise.all([
+      const [{ mountTerminal, loadTerminalCommandCatalog }, { createPopularTerminalLoader }] = await Promise.all([
         import('./terminal'), import('./terminal-catalog-api'),
       ]);
-      focusConsole = mountTerminal(host, createPopularTerminalLoader());
+      const commands = await loadTerminalCommandCatalog(loadingAbort?.signal);
+      if (disposed) return;
+      focusConsole = mountTerminal(host, createPopularTerminalLoader(), commands);
       document.querySelector('#terminal-loading')?.remove();
       if (pendingFocus) { focusConsole(); pendingFocus = false; }
     } catch {
+      if (disposed) return;
       requested = false;
       const status = document.querySelector<HTMLElement>('#terminal-loading');
       if (status) {

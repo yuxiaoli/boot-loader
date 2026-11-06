@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "commands": [
+    {"name":"intro","kind":"text","description":"Welcome and getting started","lines":["Welcome. Curiosity has a desktop now.","","I'm Sean. Welcome to Boot Loader's browser terminal.","Explore browser desktops from a simulated shell.","No real shell commands or host files are accessed.","","Start here:","  ls               See the available systems","  boot win11       Open Windows 11 in this tab","  boot win11 --embed  Try it in the computer screen","Some systems need a direct tab instead.","","Use Tab to complete commands; Up/Down for history.","Press Esc to discard input without running it.","Type help for commands or about for the story."]},
+    {"name":"about","kind":"text","description":"Project background and author","lines":["About Boot Loader","","Built by Sean. A browser pretending to be somewhere","else, built on the work of open-source communities.","Boot Loader brings browser desktops together with","a visual selector and a simulated terminal.","","The interesting part isn't making pixels look like","an operating system. It's seeing how much of the","experience lives in the details.","","Keep exploring: https://vectorindex.cloud","Boot Loader source: https://github.com/yuxiaoli/boot-loader","Type source for the individual system projects.","Type intro to get started or help for commands."]},
+    {"name":"time","kind":"handler","description":"Local time and browser time zone","handler":"time"},
+    {"name":"reload","kind":"handler","description":"Reload the current page","handler":"reload"}
+  ]
+}
