@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { readFile, readdir, stat } from 'node:fs/promises';
 const packageJson = JSON.parse(await readFile('node_modules/figlet/package.json', 'utf8'));
 assert.equal(packageJson.version, '1.12.0');
+const manifest = JSON.parse(await readFile('src/tools/manifest.json', 'utf8'));
+assert.equal(manifest.tools.find(tool => tool.id === 'figlet')?.version, packageJson.version, 'Listed FIGlet version must match the bundled package');
 assert.equal(JSON.parse(await readFile('node_modules/commander/package.json', 'utf8')).version, '14.0.0');
 const files = (await readdir('node_modules/figlet/fonts')).filter(name => name.endsWith('.flf'));
 assert.equal(files.length, 332);

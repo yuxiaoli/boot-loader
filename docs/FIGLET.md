@@ -10,7 +10,12 @@ declarations, defaults, action precedence, help and version behavior are retaine
 The package-lock integrity for FIGlet is
 `sha512-Ith3WsUi0N/EqGt+0/F6XnWhT04sohhH2tT0Dq7GdUmWbMTIoCbg2Jq9qKggmTO62ST5kRCfB311EmIMbizGyA==`.
 
-Examples after `install figlet`:
+Discover available trusted packages with `install --list`, then enable FIGlet with
+`install figlet`. Package discovery includes enabled packages and leaves tool
+loading, registration and saved enablement untouched. It uses the same trusted
+manifest entries and compiled adapter allowlist as installation.
+
+Examples after `install figlet` (`figlet --list` still lists fonts):
 
 ```text
 figlet "Hello World"
