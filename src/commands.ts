@@ -1,3 +1,5 @@
+import { nativeHandlers } from './native-handlers';
+import type { ToolRegistry } from './tools/registry';
 import { destinations, findDestination, repositoryUrl } from './destinations';
 import { validateLoadUrl } from './load-url';
 import { terminalThemes } from './terminal-appearance';
@@ -5,7 +7,7 @@ import { defaultCommandCatalog, type CommandCatalog } from './command-catalog';
 
 export type ScreenRequest = { url: string; label: string; kind: 'registry' | 'custom'; directOnly?: string };
 export function themeSlug(name: string): string { return name.trim().toLowerCase().replace(/\s+/g, '-'); }
-export type CommandResult = { lines: string[]; navigate?: string; screen?: ScreenRequest; clear?: boolean; themeId?: string; refit?: boolean; refreshThemes?: boolean; reboot?: boolean; reload?: boolean };
+export type CommandResult = { lines: string[]; exitCode?: number; navigate?: string; screen?: ScreenRequest; clear?: boolean; themeId?: string; refit?: boolean; refreshThemes?: boolean; reboot?: boolean; reload?: boolean };
 type Node = { kind: 'directory' } | { kind: 'file'; lines: string[] };
 
 function defaultText(name: 'intro' | 'about'): string[] {
@@ -40,6 +42,8 @@ const helpRows: ReadonlyArray<{ line: string; names?: readonly string[]; configu
   { line: '  refit            Fit terminal to current viewport', names: ['refit'] },
   { line: '  source [system]  Show sources or open one', names: ['source'] },
   { line: '  clear / cls      Clear the display', names: ['clear', 'cls'] },
+  { line: '  install figlet   Enable the trusted browser FIGlet tool', names: ['install'] },
+  { line: '  uninstall figlet Remove FIGlet enablement', names: ['uninstall'] },
   { line: '  help             Show this guide', names: ['help'] },
   { line: '' },
   { line: 'Try: ls | cd .. | cat README.txt | boot win11' },
@@ -53,15 +57,15 @@ const helpRows: ReadonlyArray<{ line: string; names?: readonly string[]; configu
 ];
 export const codeOwnedCommandNames = Object.freeze(helpRows.flatMap((row) => row.names ?? []));
 
-function effectiveHelpLines(catalog: CommandCatalog): string[] {
+function effectiveHelpLines(catalog: CommandCatalog, tools?: ToolRegistry): string[] {
   const builtins = new Set(['intro', 'about', 'time', 'reload']);
   const format = (name: string, description: string) => `  ${name}${' '.repeat(Math.max(1, 17 - name.length))}${description}`;
-  const lines = helpRows.map((row) => {
+  const lines = helpRows.flatMap((row) => {
     const configured = row.configured && catalog.commands.find((item) => item.name === row.configured);
-    return configured ? format(configured.name, configured.description) : row.line;
+    return configured ? [format(configured.name, configured.description)] : row.configured ? [] : [row.line];
   });
   const extras = catalog.commands.filter((item) => !builtins.has(item.name)).map((item) => format(item.name, item.description));
-  lines.splice(lines.indexOf('  help             Show this guide') + 1, 0, ...extras);
+  lines.splice(lines.indexOf('  help             Show this guide') + 1, 0, ...extras, ...(tools?.commands.map(item => format(item.command, item.description)) ?? []));
   return lines;
 }
 export const helpLines = effectiveHelpLines(defaultCommandCatalog);
@@ -116,12 +120,12 @@ export function virtualPathCompletions(prefix: string, cwd: string, directoriesO
   return candidates.filter((value) => value.startsWith(name)).map((value) => directory + value);
 }
 
-/** No browser storage, host environment, evaluation or external filesystem. */
+/** Session-only virtual state; optional trusted tools own enablement metadata. */
 export class TerminalSession {
   cwd = '/systems';
   themes = Object.entries(terminalThemes).map(([id, t]) => ({ id, name: t.label }));
   readonly variables = new Map<string, string>();
-  constructor(readonly siteUrl = 'https://yuxiaoli.github.io/boot-loader/', readonly catalog: CommandCatalog = defaultCommandCatalog) {}
+  constructor(readonly siteUrl = 'https://yuxiaoli.github.io/boot-loader/', readonly catalog: CommandCatalog = defaultCommandCatalog, readonly tools?: ToolRegistry) {}
   get prompt() { return `${this.cwd}> `; }
 }
 
@@ -136,8 +140,7 @@ export function executeCommand(input: string, session = new TerminalSession()): 
   if (configured?.kind === 'text') return { lines: args.length ? [`Usage: ${command}`] : [...configured.lines] };
   if (configured?.kind === 'handler') {
     if (args.length) return { lines: [`Usage: ${command}`] };
-    if (configured.handler === 'time') return { lines: [new Date().toLocaleString(undefined, { timeZoneName: 'short' }), `Time zone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`] };
-    if (configured.handler === 'reload') return { lines: [], reload: true };
+    return nativeHandlers[configured.handler]();
   }
   if (command === 'themes') {
     if (argument === 'refresh') return { lines: ['Refreshing theme catalogue...'], refreshThemes: true };
@@ -164,7 +167,7 @@ export function executeCommand(input: string, session = new TerminalSession()): 
   }
   if (command === 'refit') return args.length ? { lines: ['Usage: refit'] } : { lines: ['Terminal fitted to the current viewport.'], refit: true };
   if (command === 'reboot') return args.length ? { lines: ['Usage: reboot'] } : { lines: [], reboot: true };
-  if (command === 'help') return { lines: args.length ? ['Usage: help'] : effectiveHelpLines(session.catalog) };
+  if (command === 'help') return { lines: args.length ? ['Usage: help'] : effectiveHelpLines(session.catalog, session.tools) };
   if (command === 'clear' || command === 'cls') return args.length ? { lines: ['Usage: clear'] } : { lines: [], clear: true };
   if (command === 'pwd' || command === 'cwd') return { lines: args.length ? [`Usage: ${command}`] : [session.cwd] };
   if (command === 'echo') return { lines: [argument] };
@@ -209,7 +212,7 @@ export function executeCommand(input: string, session = new TerminalSession()): 
       if (node.kind !== 'directory') return { lines: ['Not a directory.'] };
       session.cwd = path; return { lines: [] };
     }
-    if (command === 'cat') return { lines: node.kind === 'file' ? (path === '/help.txt' ? effectiveHelpLines(session.catalog) : [...node.lines]) : ['Is a directory. Use ls to list it.'] };
+    if (command === 'cat') return { lines: node.kind === 'file' ? (path === '/help.txt' ? effectiveHelpLines(session.catalog, session.tools) : [...node.lines]) : ['Is a directory. Use ls to list it.'] };
     if (node.kind === 'file') return { lines: [path.split('/').at(-1)!] };
     if (path === '/systems') return { lines: destinations.map((os) => `  ${os.id.padEnd(10)} ${os.name}`) };
     return { lines: ['  systems/', '  README.txt', '  help.txt'] };
@@ -230,4 +233,12 @@ export function executeCommand(input: string, session = new TerminalSession()): 
     return { lines: [`Opening ${os.name}${command === 'source' ? ' source' : ''}...`], navigate: command === 'source' ? os.source : os.live };
   }
   return { lines: [`Unknown command: ${command}`, 'Type help for available commands.'] };
+}
+
+/** Keep built-ins synchronous; only trusted installed tools use async execution. */
+export function runCommand(input:string, session:TerminalSession, signal?:AbortSignal):CommandResult|Promise<CommandResult> {
+  const name=input.trim().split(/\s/,1)[0].toLowerCase();
+  const configured=session.catalog.commands.some(item=>item.name===name);
+  if(!configured && session.tools?.handles(input))return session.tools.execute(input,signal);
+  return executeCommand(input,session);
 }

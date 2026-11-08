@@ -1,7 +1,8 @@
+import { isNativeHandlerId, type NativeHandlerId } from './native-handlers';
 import bundled from './command-catalog.json';
 import { parseUniqueJson } from './json-unique';
 
-export type CommandDefinition = Readonly<{name:string; kind:'text'; description:string; lines:readonly string[]} | {name:string; kind:'handler'; description:string; handler:'time'|'reload'}>;
+export type CommandDefinition = Readonly<{name:string; kind:'text'; description:string; lines:readonly string[]} | {name:string; kind:'handler'; description:string; handler:NativeHandlerId}>;
 export type CommandCatalog = Readonly<{commands:readonly CommandDefinition[]}>;
 const MAX_BYTES = 65536;
 function utf8Length(value:string):number {
@@ -9,7 +10,7 @@ function utf8Length(value:string):number {
   for(const char of value) { const cp=char.codePointAt(0)!; bytes+=cp<=0x7f?1:cp<=0x7ff?2:cp<=0xffff?3:4; }
   return bytes;
 }
-const reserved = new Set(['boot','cat','cd','clear','cls','cwd','echo','help','load','ls','open','pwd','reboot','refit','set','source','theme','themes','constructor','prototype','__proto__']);
+const reserved = new Set(['install','uninstall','figlet','boot','cat','cd','clear','cls','cwd','echo','help','load','ls','open','pwd','reboot','refit','set','source','theme','themes','constructor','prototype','__proto__']);
 const own = (o:Record<string,unknown>, keys:string[]) => Object.keys(o).length === keys.length && keys.every(k => Object.hasOwn(o,k));
 const object = (v:unknown):Record<string,unknown> => {if(!v || typeof v !== 'object' || Array.isArray(v)) throw Error('Expected object'); return v as Record<string,unknown>;};
 const text = (v:unknown, max:number) => {if(typeof v !== 'string' || v.length > max || /[\x00-\x1f\x7f-\x9f]/.test(v)) throw Error('Invalid text'); return v;};
@@ -24,17 +25,15 @@ export function parseCommandCatalog(source:string):CommandCatalog {
     seen.add(name);
     if(row.kind === 'text') {
       if(!own(row,['name','kind','description','lines']) || !Array.isArray(row.lines) || row.lines.length > 100) throw Error('Invalid text command');
-      if(name==='time' || name==='reload') throw Error('Required handler');
       const lines = row.lines.map((line:unknown) => text(line,1024));
       return Object.freeze({name,kind:'text' as const,description,lines:Object.freeze(lines)});
     }
     if(row.kind === 'handler') {
-      if(!own(row,['name','kind','description','handler']) || (name!=='time' && name!=='reload') || row.handler!==name) throw Error('Invalid handler');
-      return Object.freeze({name,kind:'handler' as const,description,handler:name as 'time'|'reload'});
+      if(!own(row,['name','kind','description','handler']) || !isNativeHandlerId(row.handler)) throw Error('Invalid handler');
+      return Object.freeze({name,kind:'handler' as const,description,handler:row.handler as NativeHandlerId});
     }
     throw Error('Invalid kind');
   });
-  if(!['intro','about','time','reload'].every(n=>seen.has(n))) throw Error('Missing required command');
   return Object.freeze({version:1 as const,commands:Object.freeze(commands)});
 }
 export const defaultCommandCatalog = parseCommandCatalog(JSON.stringify(bundled));

@@ -55,7 +55,7 @@ test('help and both terminal routes expose intro/about without replacing the com
     expect(html).toContain('<code>about</code> for the story');
     expect(html).toContain('<code>help</code> for commands');
   }
-  expect(complete('in')).toEqual(['intro']);
+  expect(complete('in')).toEqual(['install', 'intro']);
   expect(complete('AB')).toEqual(['about']);
   expect(complete('intro ')).toEqual([]);
   expect(complete('about ')).toEqual([]);

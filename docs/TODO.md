@@ -112,3 +112,9 @@ Consequences for the proposal:
 - Before any future release, run the repository's aggregate checks and browser verification. Use a feature branch and draft PR targeting `develop`; do not modify `main` or branch/environment protections.
 
 This roadmap entry is documentation only. No package was installed, no runtime code was changed, and no browser compatibility or offline behavior is claimed as tested.
+
+### Implementation update — 2026-11-08
+
+The later implementation request is prepared on a feature branch for review; this is not a claim of merge or live deployment. It includes the pinned FIGlet 1.12.0 browser adapter with the original Commander 14.0.0 parser, dedicated cancellable Worker, full lazy font corpus, validated installation metadata, install/uninstall and effective help/completion. See [the compatibility baseline and explicit browser differences](FIGLET.md).
+
+The JSON configuration follow-up also decouples configured command names from the approved compiled `time` and `reload` operations. Commands can be renamed, aliased or omitted in the initialization catalogue without executable JSON. Defaults remain unchanged. No arbitrary JavaScript, generic browser API traversal or startup-preference settings were added.

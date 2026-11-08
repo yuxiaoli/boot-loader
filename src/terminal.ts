@@ -1,7 +1,8 @@
+import { ToolRegistry } from './tools/registry';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
-import { executeCommand, TerminalSession } from './commands';
+import { runCommand, TerminalSession, type CommandResult } from './commands';
 import { CommandHistory, CompletionCycle, inputWindow, sanitizeInput } from './editor';
 import { terminalTheme, terminalThemes, terminalFontSizes, initializeTerminalHeight } from './terminal-appearance';
 import { openComputer } from './screen-session';
@@ -48,12 +49,16 @@ export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader
   let cursor = 0;
   let history = new CommandHistory();
   const completion = new CompletionCycle();
-  const createSession = () => new TerminalSession(new URL(import.meta.env.BASE_URL, location.origin).href, commands);
+  const tools = new ToolRegistry();
+  let disposed = false;
+  let pending: AbortController | undefined;
+  const createSession = () => new TerminalSession(new URL(import.meta.env.BASE_URL, location.origin).href, commands, tools);
   let session = createSession();
   const maxLength = () => 2200;
-  const completionContext = () => ({ cwd: session.cwd, variableNames: [...session.variables.keys()], themeIds: session.themes.map(t => t.id), themeNames: session.themes.map(t => t.name), catalog: commands });
+  const completionContext = () => ({ cwd: session.cwd, variableNames: [...session.variables.keys()], themeIds: session.themes.map(t => t.id), themeNames: session.themes.map(t => t.name), catalog: commands, toolNames: tools.commands.map(item => item.command) });
   const writePrompt = () => term.write(session.prompt);
   const redraw = () => {
+    if (pending || disposed) return;
     const view = inputWindow(line, cursor, Math.max(1, term.cols - session.prompt.length - 1));
     term.write(`\r\x1b[2K${session.prompt}${view.text}`);
     if (view.text.length > view.cursor) term.write(`\x1b[${view.text.length - view.cursor}D`);
@@ -62,9 +67,24 @@ export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader
   const submit = () => {
     term.write('\r\n');
     history.add(line.trim());
-    const result = executeCommand(line, session);
+    const controller = new AbortController();
+    const initiatingSession = session;
+    const result = runCommand(line, session, controller.signal);
+    if (result instanceof Promise) {
+      pending = controller; reset();
+      void result.then(value => {
+        if (disposed || controller.signal.aborted || session !== initiatingSession || pending !== controller) return;
+        pending = undefined; applyResult(value);
+      }).catch(() => {
+        if (disposed || controller.signal.aborted || pending !== controller) return;
+        pending = undefined; applyResult({lines:['Command failed.']});
+      });
+    } else applyResult(result);
+  };
+  const applyResult = (result: CommandResult) => {
     if (result.reload) { window.location.reload(); return; }
     if (result.reboot) {
+      tools.cancel();
       const themes = session.themes;
       session = createSession(); session.themes = themes;
       history = new CommandHistory();
@@ -113,6 +133,12 @@ export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader
     return true;
   });
   term.onData((data) => {
+    if (disposed) return;
+    if (data === '\x03' && pending) {
+      pending.abort(); pending = undefined; tools.cancel();
+      term.write('^C\r\n'); reset(); writePrompt(); return;
+    }
+    if (pending) return;
     if (data === '\t' || data === '\x1b[Z') {
       const edit = completion.next(line, cursor, completionContext(), data === '\t' ? 1 : -1);
       if (edit && edit.line.length <= maxLength()) { line = edit.line; cursor = edit.cursor; redraw(); }
@@ -174,7 +200,10 @@ export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader
   observer.observe(host);
   window.addEventListener('pagehide', (event) => {
     // A cached Back navigation must restore a working console.
-    if (!event.persisted) { catalogControls?.dispose(); observer.disconnect(); motion.removeEventListener('change', updateMotion); term.dispose(); }
+    const interrupted = !!pending;
+    pending?.abort(); pending = undefined; tools.cancel();
+    if (event.persisted && interrupted) { reset(); writePrompt(); }
+    if (!event.persisted) { disposed = true; tools.dispose(); catalogControls?.dispose(); observer.disconnect(); motion.removeEventListener('change', updateMotion); term.dispose(); }
   });
   return () => term.focus();
 }

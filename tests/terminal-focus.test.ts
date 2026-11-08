@@ -196,3 +196,41 @@ test('reload refreshes the page once; arguments do not reload', () => {
   run('reload now'); expect(reload).not.toHaveBeenCalled();
   run('reload'); expect(reload).toHaveBeenCalledOnce();
 });
+
+test('async tools block submission until completion; Ctrl+C ignores late results and keeps editor usable', async () => {
+  const { ToolRegistry } = await import('../src/tools/registry');
+  let finish!:(value:{lines:string[]})=>void;
+  const execute=vi.spyOn(ToolRegistry.prototype,'execute').mockImplementation(()=>new Promise(resolve=>{finish=resolve;}));
+  const input={setAttribute(){},addEventListener(){}};
+  vi.stubGlobal('document',{querySelector:()=>null});
+  vi.stubGlobal('window',{innerWidth:1280,matchMedia:()=>({matches:false,addEventListener(){},removeEventListener(){}}),addEventListener(){}});
+  vi.stubGlobal('location',{origin:'http://localhost'});
+  vi.stubGlobal('ResizeObserver',class{observe(){}disconnect(){}});
+  mountTerminal({querySelector:()=>input,closest:()=>null} as unknown as HTMLElement);
+  handlers.data!('install figlet');handlers.data!('\r');
+  handlers.data!('echo ignored');handlers.data!('\r');expect(execute).toHaveBeenCalledOnce();
+  handlers.data!('\x03');finish({lines:['LATE INSTALL']});await Promise.resolve();
+  expect(handlers.output.join('')).not.toContain('LATE INSTALL');
+  handlers.data!('echo usable');handlers.data!('\r');expect(handlers.output).toContain('usable\r\n');
+  execute.mockRestore();
+});
+
+test('pagehide cancels tools for both disposal and Back/Forward cache without late writes', async () => {
+  const { ToolRegistry }=await import('../src/tools/registry');
+  for(const persisted of [false,true]) {
+    let finish!:(value:{lines:string[]})=>void;
+    const execute=vi.spyOn(ToolRegistry.prototype,'execute').mockImplementation(()=>new Promise(resolve=>{finish=resolve;}));
+    let pagehide!:(event:{persisted:boolean})=>void;
+    const input={setAttribute(){},addEventListener(){}};
+    vi.stubGlobal('document',{querySelector:()=>null});
+    vi.stubGlobal('window',{innerWidth:1280,matchMedia:()=>({matches:false,addEventListener(){},removeEventListener(){}}),addEventListener(name:string,fn:typeof pagehide){if(name==='pagehide')pagehide=fn;}});
+    vi.stubGlobal('location',{origin:'http://localhost'});
+    vi.stubGlobal('ResizeObserver',class{observe(){}disconnect(){}});
+    mountTerminal({querySelector:()=>input,closest:()=>null} as unknown as HTMLElement);
+    handlers.data!('install figlet');handlers.data!('\r');pagehide({persisted});
+    const count=handlers.output.length;finish({lines:['LATE']});await Promise.resolve();expect(handlers.output).toHaveLength(count);
+    handlers.data!('echo resumed');handlers.data!('\r');
+    if(persisted)expect(handlers.output).toContain('resumed\r\n');else expect(handlers.output).toHaveLength(count);
+    execute.mockRestore();
+  }
+});

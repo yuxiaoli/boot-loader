@@ -46,10 +46,12 @@ test('rejects malformed, dangerous, duplicate and colliding definitions atomical
  const mutations:((x:any)=>void)[]=[
   x=>{x.commands[0].name='BOOT';}, x=>{x.commands.push({...x.commands[0]});},
   x=>{x.commands[0].lines=['\u001b]2;bad'];}, x=>{x.commands[0].extra='x';},
-  x=>{x.commands[2].handler='reload';}, x=>{x.commands[1].name='constructor';},
+  x=>{x.commands[1].name='constructor';},
   x=>{x.commands[0].kind='script';}, x=>{x.commands[2].handler='unknown';},
   x=>{x.commands.push({name:'theme',kind:'text',description:'x',lines:['x']});},
-  x=>{x.commands.push({name:'demo',kind:'handler',description:'x',handler:'time'});},
+  x=>{x.commands.push({name:'figlet',kind:'text',description:'x',lines:[]});},
+  x=>{x.commands[2].handler='window.location.reload';},
+  x=>{x.commands[2].handler='constructor';},
  ];
  for(const mutate of mutations){const x=structuredClone(raw);mutate(x);expect(()=>parseCommandCatalog(JSON.stringify(x))).toThrow();}
  expect(()=>parseCommandCatalog('{"version":1,"version":1,"commands":[]}')).toThrow();
@@ -114,4 +116,29 @@ test('rejects prototype-sensitive object keys explicitly', async () => {
  const source=JSON.stringify(raw).replace('"version":1','"version":1,"__proto__":{"polluted":true}');
  expect(()=>parseCommandCatalog(source)).toThrow();
  expect(({} as Record<string,unknown>).polluted).toBeUndefined();
+});
+
+
+test('JSON independently defines command names, handler bindings and presence', async () => {
+ const {executeCommand,TerminalSession}=await import('../src/commands');
+ const {complete}=await import('../src/editor');
+ const catalog=parseCommandCatalog(JSON.stringify({version:1,commands:[
+  {name:'refresh-page',kind:'handler',description:'Refresh this page',handler:'reload'},
+  {name:'clock',kind:'handler',description:'Read the browser clock',handler:'time'},
+  {name:'reload',kind:'text',description:'Explain refreshing',lines:['Use refresh-page']},
+ ]}));
+ const session=new TerminalSession(undefined,catalog);
+ expect(executeCommand('refresh-page',session).reload).toBe(true);
+ expect(executeCommand('refresh-page now',session).reload).toBeUndefined();
+ expect(executeCommand('clock',session).lines.join(' ')).toContain('Time zone:');
+ expect(executeCommand('reload',session)).toEqual({lines:['Use refresh-page']});
+ expect(executeCommand('time',session).lines[0]).toContain('Unknown command');
+ expect(executeCommand('about',session).lines[0]).toContain('Unknown command');
+ const help=executeCommand('help',session).lines;
+ expect(help).toEqual(executeCommand('cat /help.txt',session).lines);
+ expect(help.join(' ')).toContain('refresh-page');
+ expect(help.join(' ')).not.toContain('  about');
+ expect(complete('ref',[],undefined,[],[],catalog)).toEqual(['refit','refresh-page']);
+ expect(complete('ab',[],undefined,[],[],catalog)).toEqual([]);
+ expect(parseCommandCatalog('{"version":1,"commands":[]}').commands).toEqual([]);
 });

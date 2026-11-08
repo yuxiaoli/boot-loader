@@ -2,14 +2,14 @@ import { destinations, findDestination } from './destinations';
 import { codeOwnedCommandNames, themeSlug, virtualPathCompletions } from './commands';
 import { defaultCommandCatalog, type CommandCatalog } from './command-catalog';
 
-export function complete(line: string, variableNames: string[] = [], cwd = '/systems', themeIds: string[] = [], themeNames: string[] = [], catalog: CommandCatalog = defaultCommandCatalog): string[] {
+export function complete(line: string, variableNames: string[] = [], cwd = '/systems', themeIds: string[] = [], themeNames: string[] = [], catalog: CommandCatalog = defaultCommandCatalog, toolNames: readonly string[] = []): string[] {
   if (!line.trim()) return [];
   const start = line.search(/\S*$/);
   const head = line.slice(0, start);
   const token = line.slice(start);
   const previous = head.trim().split(/\s+/).filter(Boolean);
   if (!previous.length) {
-    const names = [...codeOwnedCommandNames, ...catalog.commands.map((item) => item.name)].sort();
+    const names = [...toolNames, ...codeOwnedCommandNames, ...catalog.commands.map((item) => item.name)].sort();
     return names.filter((value) => value.startsWith(token.toLowerCase())).map((value) => head + value);
   }
   const command = previous[0].toLowerCase();
@@ -24,6 +24,7 @@ export function complete(line: string, variableNames: string[] = [], cwd = '/sys
       .filter(v => v.startsWith(match[2])).map(v => match[1] + v);
   }
   let candidates: string[] = [];
+  if (['install', 'uninstall'].includes(command) && !args.length) candidates = ['figlet'];
   if (command === 'themes' && !args.length) candidates = ['refresh'];
   if (command === 'boot' || command === 'open' || command === 'load') {
     if (args.some((value) => value.startsWith('-') && value !== '--embed') || args.filter((value) => value === '--embed').length > 1) return [];
@@ -37,18 +38,18 @@ export function complete(line: string, variableNames: string[] = [], cwd = '/sys
 }
 
 type CompletionEdit = { line: string; cursor: number };
-type CompletionContext = { cwd?: string; variableNames?: string[]; themeIds?: string[]; themeNames?: string[]; catalog?: CommandCatalog };
+type CompletionContext = { cwd?: string; variableNames?: string[]; themeIds?: string[]; themeNames?: string[]; catalog?: CommandCatalog; toolNames?: readonly string[] };
 
 /** A cycle belongs to the original prefix until input, caret or context changes. */
 export class CompletionCycle {
   private active?: { key: string; catalog: CommandCatalog; edits: CompletionEdit[]; index: number; result: CompletionEdit };
   reset(): void { this.active = undefined; }
-  private key(context: CompletionContext): string { return JSON.stringify([context.cwd ?? '/systems', context.variableNames ?? [], context.themeIds ?? [], context.themeNames ?? []]); }
+  private key(context: CompletionContext): string { return JSON.stringify([context.cwd ?? '/systems', context.variableNames ?? [], context.themeIds ?? [], context.themeNames ?? [], context.toolNames ?? []]); }
   private current(line: string, cursor: number, context: CompletionContext): boolean {
     return !!this.active && this.active.catalog === (context.catalog ?? defaultCommandCatalog) && this.active.key === this.key(context) && this.active.result.line === line && this.active.result.cursor === cursor;
   }
   canComplete(line: string, cursor: number, context: CompletionContext): boolean {
-    return this.current(line, cursor, context) || complete(line.slice(0, cursor), context.variableNames, context.cwd, context.themeIds, context.themeNames, context.catalog).length > 0;
+    return this.current(line, cursor, context) || complete(line.slice(0, cursor), context.variableNames, context.cwd, context.themeIds, context.themeNames, context.catalog, context.toolNames).length > 0;
   }
   next(line: string, cursor: number, context: CompletionContext, direction: -1 | 1 = 1): CompletionEdit | undefined {
     if (this.current(line, cursor, context)) {
@@ -57,7 +58,7 @@ export class CompletionCycle {
       active.result = active.edits[active.index];
       return { ...active.result };
     }
-    const edits = complete(line.slice(0, cursor), context.variableNames, context.cwd, context.themeIds, context.themeNames, context.catalog).map((value) => ({ line: value + line.slice(cursor), cursor: value.length }));
+    const edits = complete(line.slice(0, cursor), context.variableNames, context.cwd, context.themeIds, context.themeNames, context.catalog, context.toolNames).map((value) => ({ line: value + line.slice(cursor), cursor: value.length }));
     if (!edits.length) { this.reset(); return; }
     const index = direction === 1 ? 0 : edits.length - 1;
     this.active = { key: this.key(context), catalog: context.catalog ?? defaultCommandCatalog, edits, index, result: edits[index] };
