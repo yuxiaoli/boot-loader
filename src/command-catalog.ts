@@ -1,6 +1,7 @@
 import { isNativeHandlerId, type NativeHandlerId } from './native-handlers';
 import bundled from './command-catalog.json';
 import { parseUniqueJson } from './json-unique';
+import { trustedTools } from './tools/catalog';
 
 export type CommandDefinition = Readonly<{name:string; kind:'text'; description:string; lines:readonly string[]} | {name:string; kind:'handler'; description:string; handler:NativeHandlerId}>;
 export type CommandCatalog = Readonly<{commands:readonly CommandDefinition[]}>;
@@ -10,7 +11,7 @@ function utf8Length(value:string):number {
   for(const char of value) { const cp=char.codePointAt(0)!; bytes+=cp<=0x7f?1:cp<=0x7ff?2:cp<=0xffff?3:4; }
   return bytes;
 }
-const reserved = new Set(['install','uninstall','figlet','boot','cat','cd','clear','cls','cwd','echo','help','load','ls','open','pwd','reboot','refit','set','source','theme','themes','constructor','prototype','__proto__']);
+const reserved = new Set(['install','uninstall',...trustedTools.map(tool=>tool.command),'boot','cat','cd','clear','cls','cwd','echo','help','load','ls','open','pwd','reboot','refit','set','source','theme','themes','constructor','prototype','__proto__']);
 const own = (o:Record<string,unknown>, keys:string[]) => Object.keys(o).length === keys.length && keys.every(k => Object.hasOwn(o,k));
 const object = (v:unknown):Record<string,unknown> => {if(!v || typeof v !== 'object' || Array.isArray(v)) throw Error('Expected object'); return v as Record<string,unknown>;};
 const text = (v:unknown, max:number) => {if(typeof v !== 'string' || v.length > max || /[\x00-\x1f\x7f-\x9f]/.test(v)) throw Error('Invalid text'); return v;};

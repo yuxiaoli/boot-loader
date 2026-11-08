@@ -1,5 +1,30 @@
 # Verification
 
+## Package discovery — 2026-11-08
+
+- Reviewed current `develop`, roadmap-only PR #20, FIGlet implementation PR #19,
+  all existing PRs and remote branches before starting; no open implementation PR
+  duplicated this requirement.
+- `npm run check` passes 189 tests across 24 files, TypeScript, the production
+  build, all three static routes and the FIGlet asset audit. Discovery tests cover
+  installed/uninstalled/restored state, strict list-option usage, unchanged storage
+  and runtime calls, and every listed package being installable. A synthetic future
+  manifest package is discovered, installed, restored, dispatched and independently
+  removed. Unsupported adapters and malformed manifests fail closed. Future tool
+  names also receive completion and protection against JSON command shadowing.
+- Existing lifecycle/cancellation/storage tests and the actual pinned Node versus
+  browser FIGlet differential suite pass. The asset audit also checks that the
+  listed FIGlet version matches the bundled package.
+- Windows Chrome production-preview checks passed on both terminal routes:
+  package discovery, installation, restored enablement on navigation, quoted
+  Dancing Font / Hello World rendering, version output and updated help. At
+  390 by 844, `install --l` + Tab completes to `install --list`; the complete list
+  wraps within the terminal without horizontal page overflow. No browser console
+  errors or warnings were captured.
+- Release CI, exact deployed revision and live interaction results are recorded
+  in the implementation PR after deployment. These preview checks do not claim
+  physical mobile-device testing.
+
 The current local recovery passes `npm run check`. Earlier browser observations below were collected against production `dist` files served at `/boot-loader/` with Vite preview, in Windows Chrome. They are retained as prior integration evidence; current recovery QA is recorded separately.
 
 - `npm run check` passes TypeScript, 22 tests across six files, production build and static-output verification.

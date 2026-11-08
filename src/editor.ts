@@ -1,6 +1,7 @@
 import { destinations, findDestination } from './destinations';
 import { codeOwnedCommandNames, themeSlug, virtualPathCompletions } from './commands';
 import { defaultCommandCatalog, type CommandCatalog } from './command-catalog';
+import { trustedTools } from './tools/catalog';
 
 export function complete(line: string, variableNames: string[] = [], cwd = '/systems', themeIds: string[] = [], themeNames: string[] = [], catalog: CommandCatalog = defaultCommandCatalog, toolNames: readonly string[] = []): string[] {
   if (!line.trim()) return [];
@@ -24,7 +25,10 @@ export function complete(line: string, variableNames: string[] = [], cwd = '/sys
       .filter(v => v.startsWith(match[2])).map(v => match[1] + v);
   }
   let candidates: string[] = [];
-  if (['install', 'uninstall'].includes(command) && !args.length) candidates = ['figlet'];
+  if (['install', 'uninstall'].includes(command) && !args.length) {
+    candidates = trustedTools.map(tool => tool.id);
+    if (command === 'install') candidates.push('--list');
+  }
   if (command === 'themes' && !args.length) candidates = ['refresh'];
   if (command === 'boot' || command === 'open' || command === 'load') {
     if (args.some((value) => value.startsWith('-') && value !== '--embed') || args.filter((value) => value === '--embed').length > 1) return [];

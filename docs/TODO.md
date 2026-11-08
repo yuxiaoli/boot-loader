@@ -136,3 +136,17 @@ Possible implementation considerations:
 - Verify current FIGlet discovery and future package extensibility when implementation is undertaken.
 
 The exact option spelling, output format and implementation design are implementation decisions, not prescribed user requirements.
+
+### Implementation update — 2026-11-08
+
+The later implementation request adds `install --list` on a feature branch for
+review. It lists package IDs, pinned versions and descriptions from the existing
+trusted manifest, restricted to compiled adapters. Listing is read-only and
+includes enabled packages. Installation, completion and tool-command reservations
+share those supported entries; a synthetic future package test verifies discovery,
+installation and independent enablement without adding a second shipped package.
+
+Help, the virtual help file and completion expose the option. FIGlet's native
+`--list` font listing and `-h` layout semantics remain unchanged, as does the v1
+saved enablement format. Merge, Pages deployment and live verification are recorded
+in the implementation PR after their respective gates pass.

@@ -3,6 +3,20 @@ import { complete, CompletionCycle } from '../src/editor';
 import { executeCommand } from '../src/commands';
 import { renderPage } from '../src/render';
 
+test('install discovery is advertised in both help surfaces and prefix-only completion',()=>{
+  const help=executeCommand('help').lines;
+  expect(help.join('\n')).toContain('install --list');
+  expect(help.join('\n')).toContain('install <package>');
+  expect(executeCommand('cat /help.txt').lines).toEqual(help);
+  expect(complete('install --l')).toEqual(['install --list']);
+  expect(complete('install ')).toEqual(['install figlet','install --list']);
+  expect(complete('install f')).toEqual(['install figlet']);
+  expect(complete('uninstall ')).toEqual(['uninstall figlet']);
+  expect(complete('install --list ')).toEqual([]);
+  expect(complete('install figlet --')).toEqual([]);
+  expect(complete('uninstall --l')).toEqual([]);
+});
+
 test('canonical and argument completion respect command context, cwd, case and existing flags', () => {
   expect(complete('l')).toEqual(['ls']);
   expect(complete('o')).toEqual(['open']);

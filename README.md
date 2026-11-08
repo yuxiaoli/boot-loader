@@ -111,9 +111,25 @@ The API v1 consumer reads `https://yuxiaoli.github.io/themes-catalog-api/api/v1/
 
 `reload` maps to the terminal controller's `window.location.reload()` operation; `time` reads the browser clock and time zone. These are **handler IDs**, not JavaScript expressions. Other browser operations require an explicitly reviewed code-owned handler before JSON can bind them. No `eval`, generic property traversal or arbitrary API execution is supported. Entries may be renamed or omitted, including all four default configured names. Existing defaults remain unchanged. Dispatch, help, the virtual help file and completion follow the loaded definitions; reserved built-in/tool names cannot be overwritten. Invalid documents fail atomically to the bundled default catalogue, with existing size, timeout and same-origin restrictions.
 
-### Trusted browser FIGlet
+### Trusted browser packages and FIGlet
+
+Run `install --list` to discover every supported package available in this release,
+including packages already enabled. Each row shows the package ID, pinned version
+and description. Listing does not load tool code/fonts, enable commands or change
+saved installation state. Use `install <package>` to enable one; currently this is
+`install figlet`. `--list` must be used alone, without a package name or other
+options. It is shown in `help`, `cat /help.txt` and Tab/Shift+Tab completion.
+
+Package metadata comes from `src/tools/manifest.json`. Listing, installation,
+package completion and tool-command reservations use the same supported entries;
+only entries backed by a reviewed, compiled adapter in `src/tools/catalog.ts` are
+available. To add a future package, add its trusted manifest entry and, when
+needed, its fixed runtime adapter. No separate discovery list is maintained.
 
 Run `install figlet`, then `figlet "Hello World"`. Installation enables the pinned, bundled browser-compatible npm tool; it does not install arbitrary npm packages or execute lifecycle scripts. The existing FIGlet CLI spelling is retained, including `--help`, `--list`, `-f "Dancing Font"`, `-w 80`, `-h <horizontalLayout>`, `-v <verticalLayout>`, `--info Standard`, and `--` before literal dash-prefixed text. `-h` is **not** help. See [compatibility and dependency notices](docs/FIGLET.md).
+
+`install --list` lists packages; `figlet --list` retains its native meaning of
+listing FIGlet fonts after FIGlet is enabled.
 
 Tool code runs in a lazy dedicated Worker. Standard loads during installation; other fonts load only when requested. Ctrl+C cancels loading/rendering and returns to the prompt. Commands have a 15-second timeout and 256 KiB output limit. While a tool is running the editor waits; use Ctrl+C before entering another command. `uninstall figlet` removes command registration and saved enablement. It does not promise that downloaded module bytes disappear from browser caches.
 

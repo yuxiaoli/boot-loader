@@ -4,6 +4,7 @@ import { safeToolOutput, shellArgv } from '../src/tools/shell-argv';
 import { TerminalSession, executeCommand, runCommand } from '../src/commands';
 import { complete } from '../src/editor';
 import type { ToolRuntime } from '../src/tools/worker-client';
+import manifest from '../src/tools/manifest.json';
 function setup(load:ToolRuntime['load']=async()=>{}) {
   let value:string|null=null;
   const storage={getItem:()=>value,setItem:(_key:string,next:string)=>{value=next;}};
@@ -26,6 +27,49 @@ test('tool output strips terminal controls and keeps art whitespace',()=>{
 test('manifest rejects unknown executable or asset fields',()=>{
   expect(validateToolManifest({version:1,tools:[toolDefinition]})).toBe(true);
   expect(validateToolManifest({version:1,tools:[{...toolDefinition,url:'https://evil.example'}]})).toBe(false);
+});
+test('install --list discovers every available package without loading or saving',async()=>{
+  const {registry,runtime,storage}=setup();
+  const read=vi.spyOn(storage,'getItem');
+  const write=vi.spyOn(storage,'setItem');
+  const session=new TerminalSession(undefined,undefined,registry);
+  expect((await runCommand('install --list',session)).lines).toEqual([
+    'Available trusted packages:',
+    ...manifest.tools.map(tool=>`  ${tool.id}@${tool.version}  ${tool.description}`),
+    'Use install <package> to enable a package.',
+  ]);
+  expect(registry.commands).toEqual([]);
+  expect(read).not.toHaveBeenCalled();
+  expect(write).not.toHaveBeenCalled();
+  expect(runtime.load).not.toHaveBeenCalled();
+  expect(runtime.run).not.toHaveBeenCalled();
+  expect(runtime.dispose).not.toHaveBeenCalled();
+});
+test('listing and malformed list options preserve installed records and normal installation',async()=>{
+  const {registry,runtime,storage}=setup();
+  const originalList=await registry.execute('install --list');
+  for(const tool of manifest.tools)await registry.execute(`install ${tool.id}`);
+  const saved=storage.getItem();
+  const write=vi.spyOn(storage,'setItem');
+  const loads=runtime.load.mock.calls.length;
+  for(const input of ['install --list','  INSTALL   --list  ', 'install "--list"']) {
+    expect(await registry.execute(input)).toEqual(originalList);
+    expect(registry.commands).toEqual(manifest.tools);
+  }
+  for(const input of ['install','install --list figlet','install figlet --list','install --list --list','install --unknown','install -l','install FIGLET','install arbitrary-npm-package']) {
+    expect((await registry.execute(input)).lines[0]).toContain('Usage: install <package> | install --list');
+  }
+  expect(runtime.load).toHaveBeenCalledTimes(loads);
+  expect(runtime.run).not.toHaveBeenCalled();
+  expect(runtime.dispose).not.toHaveBeenCalled();
+  expect(write).not.toHaveBeenCalled();
+  expect(storage.getItem()).toBe(saved);
+  const restored=new ToolRegistry(storage,()=>runtime);
+  expect(await restored.execute('install --list')).toEqual(originalList);
+  expect((await restored.execute('install figlet')).lines).toEqual(['figlet is already enabled.']);
+  expect((await restored.execute('figlet hi')).exitCode).toBe(0);
+  await restored.execute('uninstall figlet');
+  expect(await restored.execute('install --list')).toEqual(originalList);
 });
 test('install, effective help/completion/dispatch, reboot retention, uninstall and reinstall',async()=>{
   const {registry,runtime,storage}=setup();
