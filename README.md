@@ -96,3 +96,25 @@ The activated catalogue uses one searchable combobox for built-in and approved c
 The API loader is configured separately from the selector; only verified public terminal themes explicitly marked popular may be activated. Editor themes and unknown popularity are not inferred as terminal/popular.
 
 The API v1 consumer reads `https://yuxiaoli.github.io/themes-catalog-api/api/v1/terminal/index.json` and selects only entry identities with explicit `popularity.flags[id] === true`, preserving `popularity.order`. Popularity is not a third category or a server query parameter. Missing metadata fails closed; missing individual flags mean unknown. The loader requests only validated public terminal-detail paths (four at a time), checks identity, palette and publication evidence, and retains a SHA-256 index revision plus the upstream popularity revision. No private snapshot is bundled. A timeout or invalid detail rejects the refresh without replacing a last-good selection.
+
+### JSON command bindings
+
+`src/command-catalog.json` is the data-only initialization catalogue. Vite emits a same-release, content-hashed JSON asset; editing it requires rebuilding/releasing the site. Command names and descriptions are configurable independently of the small compiled handler registry. For example:
+
+```json
+{"version":1,"commands":[
+  {"name":"refresh-page","kind":"handler","description":"Refresh this page","handler":"reload"},
+  {"name":"clock","kind":"handler","description":"Show local time","handler":"time"},
+  {"name":"welcome","kind":"text","description":"A greeting","lines":["Hello"]}
+]}
+```
+
+`reload` maps to the terminal controller's `window.location.reload()` operation; `time` reads the browser clock and time zone. These are **handler IDs**, not JavaScript expressions. Other browser operations require an explicitly reviewed code-owned handler before JSON can bind them. No `eval`, generic property traversal or arbitrary API execution is supported. Entries may be renamed or omitted, including all four default configured names. Existing defaults remain unchanged. Dispatch, help, the virtual help file and completion follow the loaded definitions; reserved built-in/tool names cannot be overwritten. Invalid documents fail atomically to the bundled default catalogue, with existing size, timeout and same-origin restrictions.
+
+### Trusted browser FIGlet
+
+Run `install figlet`, then `figlet "Hello World"`. Installation enables the pinned, bundled browser-compatible npm tool; it does not install arbitrary npm packages or execute lifecycle scripts. The existing FIGlet CLI spelling is retained, including `--help`, `--list`, `-f "Dancing Font"`, `-w 80`, `-h <horizontalLayout>`, `-v <verticalLayout>`, `--info Standard`, and `--` before literal dash-prefixed text. `-h` is **not** help. See [compatibility and dependency notices](docs/FIGLET.md).
+
+Tool code runs in a lazy dedicated Worker. Standard loads during installation; other fonts load only when requested. Ctrl+C cancels loading/rendering and returns to the prompt. Commands have a 15-second timeout and 256 KiB output limit. While a tool is running the editor waits; use Ctrl+C before entering another command. `uninstall figlet` removes command registration and saved enablement. It does not promise that downloaded module bytes disappear from browser caches.
+
+Only validated tool IDs and exact versions are saved under `boot-loader:tools:v1`. Command history and URL variables remain session-only. `reboot` retains committed enablement; page reload remembers it and loads code/fonts lazily on first use. Storage failure is reported as session-only operation. Corrupt or incompatible records are ignored. Persistence is not an offline guarantee, and storage prefixes do not isolate data from other applications on the same origin.

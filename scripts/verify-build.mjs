@@ -1,6 +1,7 @@
 import { readFile, access, readdir } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
+import { createHash } from 'node:crypto';
 import { destinations } from '../src/destinations.ts';
 
 const base = '/boot-loader/';
@@ -41,3 +42,16 @@ assert.equal(await readFile(join('dist/assets', asset), 'utf8'), await readFile(
 const scripts = await Promise.all(assets.filter(name => name.endsWith('.js')).map(name => readFile(join('dist/assets', name), 'utf8')));
 assert.ok(scripts.some(script => script.includes(`${base}assets/${asset}`)), 'built script references catalogue at repository base');
 console.log(`PASS same-release command catalogue ${base}assets/${asset}`);
+
+const fontAssets = assets.filter(name => name.endsWith('.flf'));
+const sourceFonts = (await readdir('node_modules/figlet/fonts')).filter(name => name.endsWith('.flf'));
+const uniqueFonts = new Set(await Promise.all(sourceFonts.map(async name => createHash('sha256').update(await readFile(join('node_modules/figlet/fonts',name))).digest('hex'))));
+assert.equal(fontAssets.length, uniqueFonts.size, 'full pinned font corpus emitted as individual lazy assets (identical fonts deduplicated)');
+const workers = assets.filter(name => /^tool-worker-.*\.js$/.test(name));
+assert.equal(workers.length, 1, 'one lazy dedicated tool worker');
+for (const name of assets.filter(name => /^(main|terminal)-.*\.js$/.test(name))) {
+  const source = await readFile(join('dist/assets',name),'utf8');
+  assert.ok(!source.includes('JavaScript FIGdriver.'), `${name}: renderer/CLI is not in initial app or terminal chunks`);
+  assert.ok(!source.includes('flf2a'), `${name}: no font payload in initial app or terminal chunks`);
+}
+console.log(`PASS lazy tool worker and ${fontAssets.length} separate font assets`);

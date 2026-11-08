@@ -1,0 +1,1 @@
+{"version":1,"tools":[{"id":"figlet","version":"1.12.0","adapter":"figlet-browser-v1","command":"figlet","description":"Render text with the npm FIGlet CLI"}]}
