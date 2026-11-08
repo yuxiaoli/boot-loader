@@ -118,3 +118,21 @@ This roadmap entry is documentation only. No package was installed, no runtime c
 The later implementation request is prepared on a feature branch for review; this is not a claim of merge or live deployment. It includes the pinned FIGlet 1.12.0 browser adapter with the original Commander 14.0.0 parser, dedicated cancellable Worker, full lazy font corpus, validated installation metadata, install/uninstall and effective help/completion. See [the compatibility baseline and explicit browser differences](FIGLET.md).
 
 The JSON configuration follow-up also decouples configured command names from the approved compiled `time` and `reload` operations. Commands can be renamed, aliased or omitted in the initialization catalogue without executable JSON. Defaults remain unchanged. No arbitrary JavaScript, generic browser API traversal or startup-preference settings were added.
+
+## Requirement: list available trusted packages
+
+Recorded: 2026-11-08.
+
+Status: requirement recorded only; not implemented or released. The user asked to record this need and left the implementation details to us. This is a requirement record, not an instruction to implement or release the feature.
+
+Add an option to the `install` command that lets users discover every trusted package available to install in Boot Loader. FIGlet is the only package currently available; the capability must accommodate future trusted packages without being limited to FIGlet.
+
+Possible implementation considerations:
+
+- List available packages, not only packages already installed or enabled.
+- Listing is read-only: it does not install or enable packages or change saved installation state.
+- Keep the list consistent with the project's trusted package definitions as packages are added, and preserve the boundary against arbitrary npm packages or executable configuration.
+- Make the chosen option discoverable through command usage, help, the virtual help file and completion; preserve existing installation behavior.
+- Verify current FIGlet discovery and future package extensibility when implementation is undertaken.
+
+The exact option spelling, output format and implementation design are implementation decisions, not prescribed user requirements.
