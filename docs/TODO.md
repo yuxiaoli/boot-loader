@@ -150,3 +150,11 @@ Help, the virtual help file and completion expose the option. FIGlet's native
 `--list` font listing and `-h` layout semantics remain unchanged, as does the v1
 saved enablement format. Merge, Pages deployment and live verification are recorded
 in the implementation PR after their respective gates pass.
+
+## Requirement: uniform 13px terminal font size
+
+Recorded: 2026-11-10. Tracking: [DOT-20261110-002](https://github.com/yuxiaoli/agent-workspace/blob/develop/.agent/context/TASKS.md#DOT-20261110-002).
+
+The Boot Loader terminal must use **13px text uniformly on every device**. Sean reports that the desktop terminal currently uses 15px; this is user-reported and has not been independently verified.
+
+Status: requirement recorded only; the font adjustment is not implemented, runtime-tested or deployed by this documentation change. Keep the existing theme, catalogue, package-listing and iOS work separate. The linked [Agent Workspace project record](https://github.com/yuxiaoli/agent-workspace/blob/develop/projects/repos/boot-loader/README.md#2026-11-10--uniform-13px-terminal-font-size) tracks the same requirement.
