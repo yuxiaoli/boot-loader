@@ -3,6 +3,11 @@ import { initializeTerminalHeight, terminalThemes } from '../src/terminal-appear
 import { renderPage } from '../src/render';
 
 afterEach(() => vi.unstubAllGlobals());
+test.each(['home', 'terminal'] as const)('%s markup selects the same 13px default before terminal initialization', (page) => {
+  const html = renderPage(page);
+  expect(html).toContain('<option value="13" selected>13px</option>');
+  expect(html).not.toContain('<option value="15" selected>');
+});
 test('standalone gets initial remaining viewport; embedded height is untouched and no resize listener registered', () => {
   const addEventListener = vi.fn();
   vi.stubGlobal('window', { innerHeight: 900, visualViewport: { height: 800, offsetTop: 10 }, addEventListener });

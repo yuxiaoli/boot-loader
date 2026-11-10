@@ -1,4 +1,4 @@
-import { terminalFontSizes, terminalThemes } from './terminal-appearance.ts';
+import { defaultTerminalFontSize, terminalFontSizes, terminalThemes } from './terminal-appearance.ts';
 import { destinations, repositoryUrl } from './destinations.ts';
 import { computerIllustration, screenDialog } from './computer.ts';
 
@@ -57,7 +57,7 @@ function terminal(standalone: boolean): string {
         ${standalone ? `<a class="terminal-view-link" href="${base}visual/">Visual selector ↗</a>` : `<a class="terminal-view-link" href="${base}terminal/">Open terminal view ↗</a>`}
       </div>
       <div class="terminal-frame">
-        <div class="terminal-bar"><span><span class="terminal-indicator" aria-hidden="true"></span> boot-loader / console</span><div class="terminal-controls"><label>Font size <select id="terminal-font-size" disabled aria-label="Terminal font size">${terminalFontSizes.map(size => `<option value="${size}"${size === 15 ? ' selected' : ''}>${size}px</option>`).join('')}</select></label><label>Theme <select id="terminal-theme" disabled aria-label="Terminal theme">${Object.entries(terminalThemes).map(([id, preset]) => `<option value="${id}">${preset.label}</option>`).join('')}</select></label><button type="button" id="focus-terminal">Focus terminal <span aria-hidden="true">↵</span></button></div></div>
+        <div class="terminal-bar"><span><span class="terminal-indicator" aria-hidden="true"></span> boot-loader / console</span><div class="terminal-controls"><label>Font size <select id="terminal-font-size" disabled aria-label="Terminal font size">${terminalFontSizes.map(size => `<option value="${size}"${size === defaultTerminalFontSize ? ' selected' : ''}>${size}px</option>`).join('')}</select></label><label>Theme <select id="terminal-theme" disabled aria-label="Terminal theme">${Object.entries(terminalThemes).map(([id, preset]) => `<option value="${id}">${preset.label}</option>`).join('')}</select></label><button type="button" id="focus-terminal">Focus terminal <span aria-hidden="true">↵</span></button></div></div>
         <p class="terminal-loading" id="terminal-loading">Loading console… Ordinary desktop links are available below.</p>
         <div id="terminal-host" aria-label="Boot Loader terminal" aria-describedby="terminal-guide"></div>
       </div>

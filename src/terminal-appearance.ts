@@ -19,6 +19,8 @@ export const terminalThemes: Record<string, { label: string; theme: ITheme }> = 
   amber: { label: 'Amber', theme: { ...terminalTheme, foreground: '#FFBF00', cursor: '#FFBF0080', selectionBackground: '#FFBF0040' } },
   white: { label: 'Soft white', theme: { ...terminalTheme, foreground: '#E6E6E6', cursor: '#E6E6E680', selectionBackground: '#E6E6E640' } },
 };
+/** One initial text size on every device; explicit session choices remain available. */
+export const defaultTerminalFontSize = 13;
 export const terminalFontSizes = [12, 13, 15, 17, 20, 24];
 
 /** Measure once at mount, or on explicit refit. Ordinary resizing preserves the chosen height. */
