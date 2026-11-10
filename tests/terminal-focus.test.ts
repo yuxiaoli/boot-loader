@@ -27,6 +27,26 @@ import { defaultCommandCatalog, parseCommandCatalog } from '../src/command-catal
 
 afterEach(() => { vi.unstubAllGlobals(); handlers.output.length = 0; });
 
+test.each([320, 393, 639, 640, 768, 1280, 2560])('terminal starts at 13px at viewport width %i and retains it through resize/refit/reboot', (width) => {
+  let resize = () => {};
+  const input = { setAttribute() {}, addEventListener() {} };
+  const font = { value: '', disabled: true, addEventListener() {} };
+  vi.stubGlobal('document', { querySelector: (selector: string) => selector === '#terminal-font-size' ? font : null });
+  vi.stubGlobal('window', { innerWidth: width, innerHeight: 900, matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }), addEventListener() {} });
+  vi.stubGlobal('getComputedStyle', () => ({ marginBottom: '10px' }));
+  vi.stubGlobal('location', { origin: 'http://localhost' });
+  vi.stubGlobal('ResizeObserver', class { constructor(callback: () => void) { resize = callback; } observe() {} disconnect() {} });
+  const host = { querySelector: () => input, closest: () => null, style: { height: '320px' }, getBoundingClientRect: () => ({ top: 300 }) };
+  mountTerminal(host as unknown as HTMLElement);
+  expect(handlers.options.fontSize).toBe(13);
+  expect(font.value).toBe('13');
+  window.innerWidth = width < 640 ? 1280 : 393;
+  resize();
+  for (const command of ['refit', 'reboot']) { handlers.data!(command); handlers.data!('\r'); }
+  expect(handlers.options.fontSize).toBe(13);
+  expect(font.value).toBe('13');
+});
+
 test('reboot retains the selected command catalogue for the new terminal session', () => {
   const fixture = JSON.parse(JSON.stringify(defaultCommandCatalog));
   fixture.commands.find((command: {name: string}) => command.name === 'about').lines = ['Configured response'];
@@ -126,6 +146,7 @@ test('accessible preset controls update options and motion preference without st
   expect(font.disabled).toBe(false); expect(theme.disabled).toBe(false);
   font.value = '20'; events.font(); expect(handlers.options.fontSize).toBe(20);
   font.value = '999'; events.font(); expect(handlers.options.fontSize).toBe(20);
+  handlers.data!('reboot'); handlers.data!('\r'); expect(handlers.options.fontSize).toBe(20);
   theme.value = 'amber'; events.theme(); expect(handlers.options.theme).toMatchObject({ foreground: '#FFBF00' });
   motion.matches = false; events.motion(); expect(handlers.options.cursorBlink).toBe(true);
   expect(document.activeElement).toBe(font);

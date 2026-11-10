@@ -4,7 +4,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
 import { runCommand, TerminalSession, type CommandResult } from './commands';
 import { CommandHistory, CompletionCycle, inputWindow, sanitizeInput } from './editor';
-import { terminalTheme, terminalThemes, terminalFontSizes, initializeTerminalHeight } from './terminal-appearance';
+import { terminalTheme, terminalThemes, defaultTerminalFontSize, terminalFontSizes, initializeTerminalHeight } from './terminal-appearance';
 import { openComputer } from './screen-session';
 import { version } from '../package.json';
 import { mountCatalogControls, type CatalogLoader } from './terminal-catalog-controls';
@@ -26,7 +26,7 @@ export function mountTerminal(host: HTMLElement, catalogueLoader?: CatalogLoader
   const term = new Terminal({
     theme: terminalTheme,
     fontFamily: '"Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace',
-    fontSize: window.innerWidth < 640 ? 13 : 15,
+    fontSize: defaultTerminalFontSize,
     lineHeight: 1.25,
     cursorBlink: !reducedMotion,
     cursorStyle: 'block',
