@@ -27,5 +27,5 @@ test('named themes are extensible without color inputs and preserve footer credi
   for (const [id, preset] of Object.entries(terminalThemes)) expect(html).toContain(`<option value="${id}">${preset.label}</option>`);
   expect(html).not.toContain('type="color"');
   expect(html).toContain('aria-label="Terminal font size"');
-  expect(html).toContain('Built by <a href="https://www.linkedin.com/in/yuxiaoli/">Sean</a> with ❤️');
+  expect(html).toContain('Built by <a href="https://s.vectorindex.cloud/sean">Sean</a> with ❤️');
 });
